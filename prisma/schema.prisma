@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Certificate {
+  id                Int                @id @default(autoincrement())
+  certificateNumber Int
+  date              DateTime           @db.Date
+  receivedCopy      Boolean            @default(false)
+  sentForAdjustment Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  modifiedAt        DateTime           @default(now())
+  certificateType   CertificateType
+  companyId         Int
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  documentScans     DocumentScan[]
+  importCertificate ImportCertificate?
+  exportCertificate ExportCertificate?
+
+  @@unique([certificateNumber, date])
+}
+
+model ImportCertificate {
+  id            Int          @id @default(autoincrement())
+  certificateId Int          @unique
+  certificate   Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  importItems   ImportItem[]
+  releaseDate   DateTime     @db.Date
+}
+
+model ExportCertificate {
+  id               Int          @id @default(autoincrement())
+  certificateId    Int          @unique
+  certificate      Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  exportItems      ExportItem[]
+  billNumber       String
+  totalGrossWeight Int
+  totalNetWeight   Int
+}
+
+model DocumentScan {
+  id            Int          @id @default(autoincrement())
+  path          String
+  type          DocumentType
+  Certificate   Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  certificateId Int
+
+  @@unique([certificateId, type])
+}
+
+model Company {
+  id           Int           @id @default(autoincrement())
+  name         String
+  codeName      String       @unique
+  Certificates Certificate[]
+}
+
+model ImportItem {
+  id                   Int               @id @default(autoincrement())
+  importCertificateId  Int
+  certificate          ImportCertificate @relation(fields: [importCertificateId], references: [id], onDelete: Cascade)
+  name                 String
+  mixingRatio          String
+  width                String
+  weightPerLinearMeter Float
+  incomingQuantity     Int
+}
+
+model ExportItem {
+  id                  Int               @id @default(autoincrement())
+  exportCertificateId Int
+  certificate         ExportCertificate @relation(fields: [exportCertificateId], references: [id], onDelete: Cascade)
+  name                String
+  grossWeight         Int
+  netWeight           Int
+}
+
+enum DocumentType {
+  CLEARANCE_DOCUMENT
+  SALES_DOCUMENT
+  TEMPORARY_PERMIT_DOCUMENT
+}
+
+enum CertificateType {
+  IMPORT_CERTIFICATE
+  EXPORT_CERTIFICATE
+}
