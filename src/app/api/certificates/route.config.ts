@@ -5,6 +5,7 @@ import { writeFile } from "fs/promises";
 import { CertificateType } from "@prisma/client";
 import ExcelJS from "exceljs";
 import { format } from "date-fns";
+import { isNumber } from "lodash";
 
 export function extractDataFromForm(formData: FormData) {
   const certificateNumber: number = +formData.get("certificateNumber")!;
@@ -78,27 +79,60 @@ export async function writeToExcelBook(filePath: string, formData: FormData) {
     extractDataFromForm(formData);
 
   if (worksheet) {
-    const cell = worksheet.getCell(worksheet.actualRowCount + 1, 2);
+    const lastCell = worksheet.getCell(worksheet.actualRowCount + 1, 2);
 
-    if (cell && cell.value === null) {
-      const { row } = cell.fullAddress!;
+    if (lastCell && lastCell.value === null) {
+      const { row } = lastCell.fullAddress;
+      const { value: lastCellNumber } = worksheet.getCell(row - 1, 1);
+
+      worksheet.getCell(row, 1).value = isNumber(lastCellNumber)
+        ? lastCellNumber + 1
+        : 1;
 
       worksheet.getCell(row, 2).value = certificateNumber;
       worksheet.getCell(row, 3).value = format(date, "dd/MM/yyyy");
       worksheet.getCell(row, 4).value = format(releaseDate, "dd/MM/yyyy");
 
-      (products as ImportProduct[]).map((product, idx) => {
-        worksheet.getCell(row + idx, 6).value = product.name;
-        worksheet.getCell(row + idx, 7).value = product.mixingRatio;
-        worksheet.getCell(row + idx, 8).value = product.width;
-        worksheet.getCell(row + idx, 9).value = product.weightPerLinearMeter;
-        worksheet.getCell(row + idx, 10).value = product.incomingQuantity;
-        worksheet.getCell(row + idx, 11).value =
-          product.incomingQuantity * product.weightPerLinearMeter;
-      });
+      (products as ImportProduct[]).map(
+        (
+          { name, mixingRatio, width, weightPerLinearMeter, incomingQuantity },
+          idx
+        ) => {
+          worksheet.getCell(row + idx, 6).value = name;
+          worksheet.getCell(row + idx, 7).value = mixingRatio;
+          worksheet.getCell(row + idx, 8).value = width;
+          worksheet.getCell(row + idx, 9).value = weightPerLinearMeter;
+          worksheet.getCell(row + idx, 10).value = incomingQuantity;
+          worksheet.getCell(row + idx, 11).value =
+            incomingQuantity * weightPerLinearMeter;
+        }
+      );
 
       for (let i = 1; i <= 5; i++) {
         worksheet.mergeCells(row, i, row + products.length - 1, i);
+      }
+
+      for (let i = 1; i <= 15; i++) {
+        worksheet.getCell(row + products.length - 1, i).style = {
+          border: {
+            bottom: {
+              style: "thick",
+            },
+            left: {
+              style: "thin",
+            },
+            right: {
+              style: "thin",
+            },
+          },
+          font: {
+            size: 16,
+          },
+          alignment: {
+            vertical: "middle",
+            horizontal: "center",
+          },
+        };
       }
 
       await workbook.xlsx.writeFile(filePath);
