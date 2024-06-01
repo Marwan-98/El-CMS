@@ -11,6 +11,7 @@ import {
   writeFilesToServer,
   writeToExcelBook,
 } from "./route.config";
+import { COMPANY_IN_ARABIC, IMPORT_BOOK_IN_ARABIC } from "@/utils/constants";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -43,98 +44,108 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const companyCode = await prisma.company
+  const { codeName: companyCode, name: companyName } = await prisma.company
     .findUnique({
       where: {
         id: companyId,
       },
       select: {
         codeName: true,
+        name: true,
       },
     })
-    .then((res) => res!.codeName);
+    .then((res) => res!);
 
-  // const documents = writeFilesToServer(formData, companyCode);
+  const documents = writeFilesToServer(formData, companyCode);
 
-  // const certificate = await prisma.certificate.create({
-  //   data: {
-  //     certificateNumber,
-  //     date,
-  //     receivedCopy: false,
-  //     sentForAdjustment: false,
-  //     createdAt: new Date(),
-  //     modifiedAt: new Date(),
-  //     certificateType,
-  //     importCertificate:
-  //       certificateType === IMPORT_CERTIFICATE
-  //         ? {
-  //             create: {
-  //               releaseDate,
-  //               importItems: {
-  //                 createMany: {
-  //                   data: (products as ImportProduct[]).map(
-  //                     ({
-  //                       name,
-  //                       width,
-  //                       weightPerLinearMeter,
-  //                       incomingQuantity,
-  //                       mixingRatio,
-  //                     }) => ({
-  //                       name,
-  //                       mixingRatio,
-  //                       width,
-  //                       weightPerLinearMeter,
-  //                       incomingQuantity,
-  //                     })
-  //                   ),
-  //                 },
-  //               },
-  //             },
-  //           }
-  //         : undefined,
-  //     exportCertificate:
-  //       certificateType === EXPORT_CERTIFICATE
-  //         ? {
-  //             create: {
-  //               totalGrossWeight,
-  //               totalNetWeight,
-  //               billNumber,
-  //               exportItems: {
-  //                 createMany: {
-  //                   data: (products as ExportProduct[]).map(
-  //                     ({ name, grossWeight, netWeight }) => ({
-  //                       name,
-  //                       grossWeight,
-  //                       netWeight,
-  //                     })
-  //                   ),
-  //                 },
-  //               },
-  //             },
-  //           }
-  //         : undefined,
-  //     company: {
-  //       connect: {
-  //         id: companyId,
-  //       },
-  //     },
-  //     documentScans: {
-  //       createMany: {
-  //         data: documents.map((document) => ({
-  //           type: document.type,
-  //           path: document.path,
-  //         })),
-  //       },
-  //     },
-  //   },
-  // });
+  const certificate = await prisma.certificate.create({
+    data: {
+      certificateNumber,
+      date,
+      receivedCopy: false,
+      sentForAdjustment: false,
+      createdAt: new Date(),
+      modifiedAt: new Date(),
+      certificateType,
+      importCertificate:
+        certificateType === IMPORT_CERTIFICATE
+          ? {
+              create: {
+                releaseDate,
+                importItems: {
+                  createMany: {
+                    data: (products as ImportProduct[]).map(
+                      ({
+                        name,
+                        width,
+                        weightPerLinearMeter,
+                        incomingQuantity,
+                        mixingRatio,
+                      }) => ({
+                        name,
+                        mixingRatio,
+                        width,
+                        weightPerLinearMeter,
+                        incomingQuantity,
+                      })
+                    ),
+                  },
+                },
+              },
+            }
+          : undefined,
+      exportCertificate:
+        certificateType === EXPORT_CERTIFICATE
+          ? {
+              create: {
+                totalGrossWeight,
+                totalNetWeight,
+                billNumber,
+                exportItems: {
+                  createMany: {
+                    data: (products as ExportProduct[]).map(
+                      ({ name, grossWeight, netWeight }) => ({
+                        name,
+                        grossWeight,
+                        netWeight,
+                      })
+                    ),
+                  },
+                },
+              },
+            }
+          : undefined,
+      company: {
+        connect: {
+          id: companyId,
+        },
+      },
+      documentScans: {
+        createMany: {
+          data: documents.map((document) => ({
+            type: document.type,
+            path: document.path,
+          })),
+        },
+      },
+    },
+  });
 
   await writeToExcelBook(
-    "C:/Users/A/Desktop/Server Backup/شركة الأمل/كشف وارد الأمل تكس.xlsx",
+    `${process.env
+      .ROOT_PATH!}/${COMPANY_IN_ARABIC} ${companyName}/${IMPORT_BOOK_IN_ARABIC} ${companyName}.xlsx`,
     formData
-  );
+  ).catch(() => {
+    return NextResponse.json(
+      {
+        error:
+          "Something went wrong when writing certificate details in the book",
+      },
+      { status: 400 }
+    );
+  });
 
-  return NextResponse.json("certificate", { status: 400 });
+  return NextResponse.json(certificate, { status: 200 });
 }
 
 export async function GET(req: NextRequest) {

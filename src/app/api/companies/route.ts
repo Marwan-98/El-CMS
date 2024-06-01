@@ -1,8 +1,6 @@
-import { DOCUMENT_TYPES } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
 import prisma from "@/services/prisma/db";
-import { mkdir, symlink } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
-import { DOCUMENT_TYPES_IN_ARABIC } from "./route.config";
+import { createFiles, createFolders } from "./route.config";
 
 export async function GET() {
   const companies = await prisma.company.findMany();
@@ -26,25 +24,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  await createFolders(companyCode, companyName).catch(() => {
+    return NextResponse.json(
+      { error: "Something went wrong when creating the folders" },
+      { status: 500 }
+    );
+  });
+
+  await createFiles(companyName).catch(() => {
+    return NextResponse.json(
+      { error: "Something went wrong when creating the files" },
+      { status: 500 }
+    );
+  });
+
   const company = await prisma.company.create({
     data: {
       name: companyName,
       codeName: companyCode,
     },
-  });
-
-  await mkdir(`${process.env.PDF_SAVE_PATH!}/${companyCode}`);
-  await mkdir(`${process.env.PDF_SAVE_PATH!}/../شركة ${companyName}`);
-
-  DOCUMENT_TYPES.map(async (type: string) => {
-    await mkdir(`${process.env.PDF_SAVE_PATH!}/${companyCode}/${type}`);
-
-    await symlink(
-      `${process.env.PDF_SAVE_PATH!}/${companyCode}/${type}`,
-      `${process.env.PDF_SAVE_PATH!}/../شركة ${companyName}/${
-        DOCUMENT_TYPES_IN_ARABIC[type]
-      }`
-    );
   });
 
   return NextResponse.json(company, { status: 200 });
