@@ -2,27 +2,14 @@
 import { useTranslations } from "next-intl";
 
 import { UseFormReset, useForm } from "react-hook-form";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DatePicker } from "@/components/Datepicker";
 import { Dispatch, SetStateAction } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   CLEARANCE_DOCUMENT,
   SALES_DOCUMENT,
@@ -32,10 +19,7 @@ import {
 import { FormValues } from "@/lib/types";
 
 const ImportCertificateForm = (props: {
-  onSubmit: (
-    values: FormValues,
-    reset: UseFormReset<z.infer<typeof formSchema>>
-  ) => void;
+  onSubmit: (values: FormValues, reset: UseFormReset<z.infer<typeof formSchema>>) => void;
   productQuantity: number;
   setProductQuantity: Dispatch<SetStateAction<number>>;
   documentQuantity: number;
@@ -43,13 +27,7 @@ const ImportCertificateForm = (props: {
 }) => {
   const t = useTranslations();
 
-  const {
-    onSubmit,
-    productQuantity,
-    setProductQuantity,
-    documentQuantity,
-    setDocumentQuantity,
-  } = props;
+  const { onSubmit, productQuantity, setProductQuantity, documentQuantity, setDocumentQuantity } = props;
 
   const formSchema = certificateFormSchema.extend({
     releaseDate: z.date({
@@ -184,11 +162,7 @@ const ImportCertificateForm = (props: {
                   <FormItem>
                     <FormLabel>{t("Width")}</FormLabel>
                     <FormControl>
-                      <Input
-                        className="w-20"
-                        placeholder={t("Width")}
-                        {...field}
-                      />
+                      <Input className="w-20" placeholder={t("Width")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -201,13 +175,7 @@ const ImportCertificateForm = (props: {
                   <FormItem>
                     <FormLabel>{t("Weight Per Linear Meter")}</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        className="w-24"
-                        step="0.001"
-                        max="0.999"
-                      />
+                      <Input {...field} type="number" className="w-24" step="0.001" max="0.999" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -232,9 +200,7 @@ const ImportCertificateForm = (props: {
         <Button
           variant="outline"
           className="block"
-          onClick={() =>
-            setProductQuantity((productQuantity) => productQuantity + 1)
-          }
+          onClick={() => setProductQuantity((productQuantity) => productQuantity + 1)}
           type="button"
         >
           {t("Add product")}
@@ -249,11 +215,7 @@ const ImportCertificateForm = (props: {
                   <FormItem>
                     <FormLabel>{t("PDF Scan")}</FormLabel>
                     <FormControl>
-                      <Input
-                        accept="Application/pdf"
-                        type="file"
-                        {...form.register(`documentScans.${idx}.scan`)}
-                      />
+                      <Input accept="Application/pdf" type="file" {...form.register(`documentScans.${idx}.scan`)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -265,22 +227,15 @@ const ImportCertificateForm = (props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("PDF Scan Type")}</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="w-[200px]" dir="rtl">
                           <SelectValue placeholder={t("Select Scan Type")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent dir="rtl">
-                        <SelectItem value={CLEARANCE_DOCUMENT}>
-                          {t("Import Certificate (Permit)")}
-                        </SelectItem>
-                        <SelectItem value={SALES_DOCUMENT}>
-                          {t("Export Certificate (Sales)")}
-                        </SelectItem>
+                        <SelectItem value={CLEARANCE_DOCUMENT}>{t("Import Certificate (Permit)")}</SelectItem>
+                        <SelectItem value={SALES_DOCUMENT}>{t("Export Certificate (Sales)")}</SelectItem>
                         <SelectItem value={TEMPORARY_PERMIT_DOCUMENT}>
                           {t("Export Certificate (Temporary Permit)")}
                         </SelectItem>
@@ -296,9 +251,7 @@ const ImportCertificateForm = (props: {
         <Button
           variant="outline"
           className="block"
-          onClick={() =>
-            setDocumentQuantity((documentQuantity) => documentQuantity + 1)
-          }
+          onClick={() => setDocumentQuantity((documentQuantity) => documentQuantity + 1)}
           type="button"
         >
           {t("Add document")}

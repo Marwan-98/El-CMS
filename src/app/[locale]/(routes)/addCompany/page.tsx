@@ -1,14 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Form,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
@@ -91,11 +84,7 @@ const AddCompany = () => {
   return (
     <div>
       <Form {...form}>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-8 h-fit"
-          encType="multipart/form-data"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 h-fit" encType="multipart/form-data">
           <FormField
             control={form.control}
             name="companyName"

@@ -4,14 +4,7 @@ import CertificateItem from "../../../../components/CertificateItem";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
@@ -68,10 +61,7 @@ export default function Search() {
   return (
     <>
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex items-end gap-4"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end gap-4">
           <FormField
             control={form.control}
             name="certificateNumber"
@@ -103,24 +93,16 @@ export default function Search() {
       </Form>
       <hr className="my-5" />
       <div className="flex flex-col">
-        {certificates.map(
-          ({
-            id,
-            certificateNumber,
-            certificateType,
-            date,
-            company: { name },
-          }) => (
-            <CertificateItem
-              key={id}
-              certificateNumber={certificateNumber}
-              certificateType={certificateType}
-              date={date}
-              companyName={name}
-              certificateId={id}
-            />
-          )
-        )}
+        {certificates.map(({ id, certificateNumber, certificateType, date, company: { name } }) => (
+          <CertificateItem
+            key={id}
+            certificateNumber={certificateNumber}
+            certificateType={certificateType}
+            date={date}
+            companyName={name}
+            certificateId={id}
+          />
+        ))}
       </div>
     </>
   );

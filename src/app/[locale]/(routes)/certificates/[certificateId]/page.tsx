@@ -38,14 +38,8 @@ export default function Certificate({
     return null;
   }
 
-  const {
-    certificateNumber,
-    certificateType,
-    date,
-    importCertificate,
-    exportCertificate,
-    documentScans,
-  } = certificate || {};
+  const { certificateNumber, certificateType, date, importCertificate, exportCertificate, documentScans } =
+    certificate || {};
 
   const { releaseDate, importItems } = importCertificate || {};
   const { exportItems } = exportCertificate || {};
@@ -62,8 +56,7 @@ export default function Certificate({
           </h6>
           {certificateType === IMPORT_CERTIFICATE && (
             <h6>
-              {t("Certificate Release Date")}:{" "}
-              {format(releaseDate, "dd-MM-yyyy")}
+              {t("Certificate Release Date")}: {format(releaseDate, "dd-MM-yyyy")}
             </h6>
           )}
         </div>
@@ -81,12 +74,7 @@ export default function Certificate({
       <div className="flex justify-end gap-5">
         <div className="flex flex-col items-start gap-10">
           {documentScans.map(({ type, path }, idx) => (
-            <a
-              href={path}
-              target="_blank"
-              className="flex items-center gap-1"
-              key={idx}
-            >
+            <a href={path} target="_blank" className="flex items-center gap-1" key={idx}>
               <Link size={20} />
               {t(type)}
             </a>

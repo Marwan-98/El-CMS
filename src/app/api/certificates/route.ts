@@ -1,17 +1,10 @@
-import {
-  EXPORT_CERTIFICATE,
-  IMPORT_CERTIFICATE,
-} from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
+import { EXPORT_CERTIFICATE, IMPORT_CERTIFICATE } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
 import { ExportProduct, ImportProduct } from "@/lib/types";
 import prisma from "@/services/prisma/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getCorrectDate } from "@/lib/utils";
-import {
-  extractDataFromForm,
-  writeFilesToServer,
-  writeToExcelBook,
-} from "./route.config";
-import { COMPANY_IN_ARABIC, IMPORT_BOOK_IN_ARABIC } from "@/utils/constants";
+import { extractDataFromForm, writeFilesToServer, writeToExcelBook } from "./route.config";
+import { CERTIFICATE_BOOK_NAMES_MAP, COMPANY } from "@/utils/constants";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -38,10 +31,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (foundCertificate) {
-    return NextResponse.json(
-      { error: "Certificate Already Created" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Certificate Already Created" }, { status: 400 });
   }
 
   const { codeName: companyCode, name: companyName } = await prisma.company
@@ -55,6 +45,12 @@ export async function POST(req: NextRequest) {
       },
     })
     .then((res) => res!);
+
+  const bookName = CERTIFICATE_BOOK_NAMES_MAP[certificateType];
+
+  const { ROOT_PATH } = process.env;
+
+  const bookPath = `${ROOT_PATH}/${COMPANY} ${companyName}/${bookName} ${companyName}.xlsx`;
 
   const documents = writeFilesToServer(formData, companyCode);
 
@@ -75,13 +71,7 @@ export async function POST(req: NextRequest) {
                 importItems: {
                   createMany: {
                     data: (products as ImportProduct[]).map(
-                      ({
-                        name,
-                        width,
-                        weightPerLinearMeter,
-                        incomingQuantity,
-                        mixingRatio,
-                      }) => ({
+                      ({ name, width, weightPerLinearMeter, incomingQuantity, mixingRatio }) => ({
                         name,
                         mixingRatio,
                         width,
@@ -103,13 +93,11 @@ export async function POST(req: NextRequest) {
                 billNumber,
                 exportItems: {
                   createMany: {
-                    data: (products as ExportProduct[]).map(
-                      ({ name, grossWeight, netWeight }) => ({
-                        name,
-                        grossWeight,
-                        netWeight,
-                      })
-                    ),
+                    data: (products as ExportProduct[]).map(({ name, grossWeight, netWeight }) => ({
+                      name,
+                      grossWeight,
+                      netWeight,
+                    })),
                   },
                 },
               },
@@ -131,21 +119,16 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  await writeToExcelBook(
-    `${process.env
-      .ROOT_PATH!}/${COMPANY_IN_ARABIC} ${companyName}/${IMPORT_BOOK_IN_ARABIC} ${companyName}.xlsx`,
-    formData
-  ).catch(() => {
+  await writeToExcelBook(bookPath, formData).catch(() => {
     return NextResponse.json(
       {
-        error:
-          "Something went wrong when writing certificate details in the book",
+        error: "Something went wrong when writing certificate details in the book",
       },
       { status: 400 }
     );
   });
 
-  return NextResponse.json(certificate, { status: 200 });
+  return NextResponse.json(certificate, { status: 400 });
 }
 
 export async function GET(req: NextRequest) {
@@ -170,10 +153,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (!certificates.length) {
-    return NextResponse.json(
-      { error: "No certificates found!" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "No certificates found!" }, { status: 404 });
   }
 
   return NextResponse.json(certificates, { status: 200 });

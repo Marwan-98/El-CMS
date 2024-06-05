@@ -18,24 +18,15 @@ export async function POST(req: NextRequest) {
   });
 
   if (foundCompany) {
-    return NextResponse.json(
-      { error: "Company already created" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Company already created" }, { status: 400 });
   }
 
   await createFolders(companyCode, companyName).catch(() => {
-    return NextResponse.json(
-      { error: "Something went wrong when creating the folders" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong when creating the folders" }, { status: 500 });
   });
 
   await createFiles(companyName).catch(() => {
-    return NextResponse.json(
-      { error: "Something went wrong when creating the files" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong when creating the files" }, { status: 500 });
   });
 
   const company = await prisma.company.create({

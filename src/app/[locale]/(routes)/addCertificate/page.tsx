@@ -6,18 +6,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useTranslations } from "next-intl";
 import { Label } from "@/components/ui/label";
 import ExportCertificateForm from "./components/ExportCertificateForm";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import axios from "axios";
-import {
-  EXPORT_CERTIFICATE,
-  IMPORT_CERTIFICATE,
-} from "./AddCertificate.config";
+import { EXPORT_CERTIFICATE, IMPORT_CERTIFICATE } from "./AddCertificate.config";
 import type { Company } from "@prisma/client";
 import { FormValues } from "@/lib/types";
 import { UseFormReset } from "react-hook-form";
@@ -55,14 +46,8 @@ export default function AddCertificate() {
       if (key === "documentScans") {
         for (let i = 0; i < values["documentScans"].length; i++) {
           if (values["documentScans"][i].scan) {
-            data.append(
-              `${values["documentScans"][i].type}`,
-              values["documentScans"][i].type || ""
-            );
-            data.append(
-              `${values["documentScans"][i].type}`,
-              values["documentScans"][i].scan[0]
-            );
+            data.append(`${values["documentScans"][i].type}`, values["documentScans"][i].type || "");
+            data.append(`${values["documentScans"][i].type}`, values["documentScans"][i].scan[0]);
           }
         }
         continue;
@@ -133,11 +118,7 @@ export default function AddCertificate() {
     <div>
       <div className="my-5">
         <Label htmlFor="certificateType">{t("Certificate type")}</Label>
-        <RadioGroup
-          id="certificateType"
-          defaultValue={certificateType}
-          className="justify-end flex"
-        >
+        <RadioGroup id="certificateType" defaultValue={certificateType} className="justify-end flex">
           <div>
             <Label htmlFor="r1">{t("Import Certificate")}</Label>
             <RadioGroupItem

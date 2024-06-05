@@ -31,10 +31,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (!certificate) {
-    return NextResponse.json(
-      { error: "No certificate was found!" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "No certificate was found!" }, { status: 404 });
   }
 
   return NextResponse.json(certificate, { status: 200 });

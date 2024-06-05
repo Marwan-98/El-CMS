@@ -2,14 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { UseFormReset, useForm } from "react-hook-form";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { z } from "zod";
@@ -22,20 +15,11 @@ import {
   TEMPORARY_PERMIT_DOCUMENT,
   certificateFormSchema,
 } from "../AddCertificate.config";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormValues } from "@/lib/types";
 
 const ExportCertificateForm = (props: {
-  onSubmit: (
-    values: FormValues,
-    reset: UseFormReset<z.infer<typeof formSchema>>
-  ) => void;
+  onSubmit: (values: FormValues, reset: UseFormReset<z.infer<typeof formSchema>>) => void;
   productQuantity: number;
   setProductQuantity: Dispatch<SetStateAction<number>>;
   documentQuantity: number;
@@ -43,31 +27,17 @@ const ExportCertificateForm = (props: {
 }) => {
   const t = useTranslations();
 
-  const {
-    onSubmit,
-    productQuantity,
-    setProductQuantity,
-    documentQuantity,
-    setDocumentQuantity,
-  } = props;
+  const { onSubmit, productQuantity, setProductQuantity, documentQuantity, setDocumentQuantity } = props;
 
   const formSchema = certificateFormSchema.extend({
     billNumber: z.string().min(1, { message: t("Bill Number is required") }),
-    totalGrossWeight: z.coerce
-      .number()
-      .min(1, { message: t("Total Gross Weight is required") }),
-    totalNetWeight: z.coerce
-      .number()
-      .min(1, { message: t("Total Net Weight required") }),
+    totalGrossWeight: z.coerce.number().min(1, { message: t("Total Gross Weight is required") }),
+    totalNetWeight: z.coerce.number().min(1, { message: t("Total Net Weight required") }),
     products: z
       .object({
         name: z.string().min(1, { message: t("Product name is required") }),
-        grossWeight: z.coerce
-          .number()
-          .min(1, { message: t("Gross Weight required") }),
-        netWeight: z.coerce
-          .number()
-          .min(1, { message: t("Net Weight required") }),
+        grossWeight: z.coerce.number().min(1, { message: t("Gross Weight required") }),
+        netWeight: z.coerce.number().min(1, { message: t("Net Weight required") }),
       })
       .array(),
   });
@@ -103,10 +73,7 @@ const ExportCertificateForm = (props: {
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={handleSubmit((data) => onSubmit(data, reset))}
-        className="space-y-8 h-fit"
-      >
+      <form onSubmit={handleSubmit((data) => onSubmit(data, reset))} className="space-y-8 h-fit">
         <FormField
           control={form.control}
           name="certificateNumber"
@@ -224,9 +191,7 @@ const ExportCertificateForm = (props: {
         <Button
           variant="outline"
           className="block"
-          onClick={() =>
-            setProductQuantity((productQuantity) => productQuantity + 1)
-          }
+          onClick={() => setProductQuantity((productQuantity) => productQuantity + 1)}
           type="button"
         >
           {t("Add product")}
@@ -241,11 +206,7 @@ const ExportCertificateForm = (props: {
                   <FormItem>
                     <FormLabel>{t("PDF Scan")}</FormLabel>
                     <FormControl>
-                      <Input
-                        accept="Application/pdf"
-                        type="file"
-                        {...form.register(`documentScans.${idx}.scan`)}
-                      />
+                      <Input accept="Application/pdf" type="file" {...form.register(`documentScans.${idx}.scan`)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -257,22 +218,15 @@ const ExportCertificateForm = (props: {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("PDF Scan Type")}</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="w-[200px]" dir="rtl">
                           <SelectValue placeholder={t("Select Scan Type")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent dir="rtl">
-                        <SelectItem value={CLEARANCE_DOCUMENT}>
-                          {t("Import Certificate (Permit)")}
-                        </SelectItem>
-                        <SelectItem value={SALES_DOCUMENT}>
-                          {t("Export Certificate (Sales)")}
-                        </SelectItem>
+                        <SelectItem value={CLEARANCE_DOCUMENT}>{t("Import Certificate (Permit)")}</SelectItem>
+                        <SelectItem value={SALES_DOCUMENT}>{t("Export Certificate (Sales)")}</SelectItem>
                         <SelectItem value={TEMPORARY_PERMIT_DOCUMENT}>
                           {t("Export Certificate (Temporary Permit)")}
                         </SelectItem>
@@ -288,9 +242,7 @@ const ExportCertificateForm = (props: {
         <Button
           variant="outline"
           className="block"
-          onClick={() =>
-            setDocumentQuantity((documentQuantity) => documentQuantity + 1)
-          }
+          onClick={() => setDocumentQuantity((documentQuantity) => documentQuantity + 1)}
           type="button"
         >
           {t("Add document")}

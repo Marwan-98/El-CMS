@@ -23,6 +23,19 @@ export interface ExportProductFormValue {
   netWeight: number;
 }
 
+export interface FormObject {
+  [key: string]: string | number | Products[] | CertificateType;
+  certificateNumber: number;
+  date: string;
+  products: Products[];
+  certificateType: CertificateType;
+  companyId: number;
+  releaseDate: string;
+  billNumber: string;
+  totalGrossWeight: number;
+  totalNetWeight: number;
+}
+
 export interface CertificateSchema {
   certificateNumber: number;
   date: Date;
@@ -77,16 +90,10 @@ export interface Document {
   file: File;
 }
 
-export type DocumentType =
-  | "CLEARANCE_DOCUMENT"
-  | "SALES_DOCUMENT"
-  | "TEMPORARY_PERMIT_DOCUMENT";
+export type DocumentType = "CLEARANCE_DOCUMENT" | "SALES_DOCUMENT" | "TEMPORARY_PERMIT_DOCUMENT";
 
 export type CertificateType = "IMPORT_CERTIFICATE" | "EXPORT_CERTIFICATE";
 
 export type Products = ExportProduct | ImportProduct;
 
-export type TranslationFunction = (
-  key: string,
-  options?: { ns?: string }
-) => string;
+export type TranslationFunction = (key: string, options?: { ns?: string }) => string;
