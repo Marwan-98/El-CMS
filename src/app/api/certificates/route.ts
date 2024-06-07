@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     );
   });
 
-  return NextResponse.json(certificate, { status: 400 });
+  return NextResponse.json(certificate, { status: 200 });
 }
 
 export async function GET(req: NextRequest) {

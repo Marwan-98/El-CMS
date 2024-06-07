@@ -30,7 +30,7 @@ export const BOOKS_LIST: BookDetails[] = [
       date: { columnTitle: "التاريخ", columnWidth: 20, columnNumber: 3 },
       releaseDate: { columnTitle: "تاريخ الصرف", columnWidth: 20, columnNumber: 4 },
       sentForAdjustment: { columnTitle: "تم ارسالها للتسويه", columnWidth: 20, columnNumber: 5 },
-      products: { columnTitle: "الصنف", columnWidth: 75, columnNumber: 6 },
+      name: { columnTitle: "الصنف", columnWidth: 75, columnNumber: 6 },
       mixingRatio: { columnTitle: "نسبة الخلط", columnWidth: 35, columnNumber: 7, relatedToProduct: true },
       width: { columnTitle: "العرض", columnWidth: 10, columnNumber: 8, relatedToProduct: true },
       weightPerLinearMeter: {
@@ -65,7 +65,7 @@ export const BOOKS_LIST: BookDetails[] = [
       billNumber: { columnTitle: "رقم الفاتورة", columnWidth: 20, columnNumber: 6 },
       totalGrossWeight: { columnTitle: "الوزن القايم", columnWidth: 15, columnNumber: 7 },
       totalNetWeight: { columnTitle: "الوزن الصافي", columnWidth: 15, columnNumber: 8 },
-      products: { columnTitle: "الصنف", columnWidth: 35, columnNumber: 9 },
+      name: { columnTitle: "الصنف", columnWidth: 35, columnNumber: 9 },
       grossWeight: {
         columnTitle: "وزن الصنف في شهادة الصادر  (القايم)",
         columnWidth: 40,

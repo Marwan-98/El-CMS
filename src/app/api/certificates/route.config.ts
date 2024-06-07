@@ -95,18 +95,18 @@ function writeCertificateDetails(
         return;
       }
 
-      if (key === "products") {
-        let columnIndex = columnNumber;
-
+      if (key === "name") {
         for (const [productIdx, product] of formObject["products"].entries()) {
-          columnIndex = columnNumber;
-
           for (const prop in product) {
-            const currentCell = worksheet.getCell(currentRow + productIdx, columnIndex);
+            const {
+              columns: {
+                prop: { columnNumber },
+              },
+            } = book;
+
+            const currentCell = worksheet.getCell(currentRow + productIdx, columnNumber);
 
             currentCell.value = product[prop as keyof typeof product] as unknown as string;
-
-            columnIndex++;
           }
         }
 
