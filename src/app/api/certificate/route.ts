@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  if (isNaN(Date.parse(date)) || date.split("-").length === 3) {
+  if (isNaN(Date.parse(date)) || date.split("-").length !== 3) {
     return NextResponse.json(
       { error: "Date Format is not Correct!" },
       {
@@ -73,6 +73,8 @@ export async function PUT(req: NextRequest) {
   if (foundDocument) {
     return NextResponse.json("Document already scanned", { status: 201 });
   }
+
+  console.log(id, getCorrectDate(date));
 
   const updatedCertificate = await prisma.certificate.update({
     where: {

@@ -11,8 +11,7 @@ export function getCorrectDate(dateString: string | null): string | null {
   }
 
   const date = new Date(dateString);
-  const timeStamp = date.getTime() - date.getTimezoneOffset() * 60000;
-  const correctDate = new Date(timeStamp).toISOString();
+  const correctDate = new Date(date).toISOString();
 
   return correctDate;
 }
