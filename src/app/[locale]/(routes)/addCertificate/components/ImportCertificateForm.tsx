@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DatePicker } from "@/components/Datepicker";
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   CLEARANCE_DOCUMENT,
@@ -50,6 +50,7 @@ const ImportCertificateForm = (props: {
         incomingQuantity: z.coerce.number().min(1, {
           message: t("Incoming quantity is required"),
         }),
+        productWeight: z.coerce.number(),
       })
       .array(),
   });
@@ -65,6 +66,7 @@ const ImportCertificateForm = (props: {
           mixingRatio: "",
           weightPerLinearMeter: 0,
           incomingQuantity: 0,
+          productWeight: 0,
         },
       ],
       documentScans: [
@@ -80,7 +82,27 @@ const ImportCertificateForm = (props: {
     formState: { isSubmitting },
     reset,
     handleSubmit,
+    watch,
+    setValue,
   } = form;
+
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name?.match("incomingQuantity") || name?.match("weightPerLinearMeter")) {
+        const inputIdx = name.split(".")[1];
+
+        const { incomingQuantity, weightPerLinearMeter } = value!.products![+inputIdx]!;
+
+        const productWeight = Math.floor(incomingQuantity! * weightPerLinearMeter!);
+
+        setValue(`products.${+inputIdx}.productWeight`, productWeight);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+
+    //eslint-disable-next-line
+  }, [watch]);
 
   return (
     <Form {...form}>
@@ -189,6 +211,19 @@ const ImportCertificateForm = (props: {
                     <FormLabel>{t("Incoming Quantity")}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" className="w-28" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={`products.${idx}.productWeight`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("Product Weight")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" className="w-28" disabled />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
