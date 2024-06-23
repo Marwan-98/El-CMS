@@ -11,7 +11,9 @@ export function getCorrectDate(dateString: string | null): string | null {
   }
 
   const date = new Date(dateString);
-  const correctDate = new Date(date).toISOString();
+  date.setUTCHours(0, 0, 0, 0);
+
+  const correctDate = date.toISOString();
 
   return correctDate;
 }

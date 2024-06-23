@@ -60,6 +60,24 @@ export async function PUT(req: NextRequest) {
     );
   }
 
+  const foundCertificate = await prisma.certificate.findUnique({
+    where: {
+      certificateNumber_date: {
+        certificateNumber: +id,
+        date: getCorrectDate(date)!,
+      },
+    },
+  });
+
+  if (!foundCertificate) {
+    return NextResponse.json(
+      { error: "Certificate Not Found, Please make sure that the certificate number and date is correct!" },
+      {
+        status: 404,
+      }
+    );
+  }
+
   const foundDocument = await prisma.documentScan.findFirst({
     where: {
       Certificate: {
@@ -73,8 +91,6 @@ export async function PUT(req: NextRequest) {
   if (foundDocument) {
     return NextResponse.json("Document already scanned", { status: 201 });
   }
-
-  console.log(id, getCorrectDate(date));
 
   const updatedCertificate = await prisma.certificate.update({
     where: {

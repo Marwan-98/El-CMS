@@ -35,9 +35,9 @@ export function extractDataFromForm(formData: FormData) {
   };
 }
 
-export function writeFilesToServer(formData: FormData, companyCode: string) {
+export function saveFilesToServer(formData: FormData, companyCode: string) {
   const documents: Document[] = [];
-  const { FILE_DB, PDF_SAVE_PATH } = process.env;
+  const { PDF_SCANS_URL, PDF_SAVE_PATH } = process.env;
 
   formData.forEach((value) => {
     (async () => {
@@ -47,7 +47,7 @@ export function writeFilesToServer(formData: FormData, companyCode: string) {
         documents.push({
           type,
           file,
-          path: `${FILE_DB}/scans/${companyCode}/${type}/${file.name}`,
+          path: `${PDF_SCANS_URL}/${companyCode}/${type}/${file.name}`,
         });
 
         const bytes = await file.arrayBuffer();

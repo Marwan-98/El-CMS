@@ -3,7 +3,7 @@ import { ExportProduct, ImportProduct } from "@/lib/types";
 import prisma from "@/services/prisma/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getCorrectDate } from "@/lib/utils";
-import { extractDataFromForm, writeFilesToServer, writeToExcelBook } from "./route.config";
+import { extractDataFromForm, saveFilesToServer, writeToExcelBook } from "./route.config";
 import { CERTIFICATE_BOOK_NAMES_MAP, COMPANY } from "@/utils/constants";
 
 export async function POST(req: NextRequest) {
@@ -48,11 +48,20 @@ export async function POST(req: NextRequest) {
 
   const bookName = CERTIFICATE_BOOK_NAMES_MAP[certificateType];
 
-  const { ROOT_PATH } = process.env;
+  const { FILE_DIR_ROOT_PATH } = process.env;
 
-  const bookPath = `${ROOT_PATH}/${COMPANY} ${companyName}/${bookName} ${companyName}.xlsx`;
+  const bookPath = `${FILE_DIR_ROOT_PATH}/${COMPANY} ${companyName}/${bookName} ${companyName}.xlsx`;
 
-  const documents = writeFilesToServer(formData, companyCode);
+  const documents = saveFilesToServer(formData, companyCode);
+
+  await writeToExcelBook(bookPath, formData).catch(() => {
+    return NextResponse.json(
+      {
+        error: "Something went wrong when writing certificate details in the book",
+      },
+      { status: 400 }
+    );
+  });
 
   const certificate = await prisma.certificate.create({
     data: {
@@ -117,15 +126,6 @@ export async function POST(req: NextRequest) {
         },
       },
     },
-  });
-
-  await writeToExcelBook(bookPath, formData).catch(() => {
-    return NextResponse.json(
-      {
-        error: "Something went wrong when writing certificate details in the book",
-      },
-      { status: 400 }
-    );
   });
 
   return NextResponse.json(certificate, { status: 200 });
