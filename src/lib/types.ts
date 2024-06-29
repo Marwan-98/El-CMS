@@ -1,5 +1,7 @@
+import { Company, ExportCertificate, ImportCertificate } from "@prisma/client";
+
 export interface FormValues {
-  certificateNumber: number;
+  certificateNumber?: number;
   date: Date;
   products: ImportProductFormValue[] | ExportProductFormValue[];
   documentScans: {
@@ -24,8 +26,8 @@ export interface ExportProductFormValue {
 }
 
 export interface FormObject {
-  [key: string]: string | number | Products[] | CertificateType;
-  certificateNumber: number;
+  [key: string]: string | number | Products[] | CertificateType | null;
+  certificateNumber: number | null;
   date: string;
   products: Products[];
   certificateType: CertificateType;
@@ -37,13 +39,17 @@ export interface FormObject {
 }
 
 export interface CertificateSchema {
-  certificateNumber: number;
+  certificateNumber?: number;
   date: Date;
   certificateType: "IMPORT_CERTIFICATE" | "EXPORT_CERTIFICATE";
   companyId: number;
   importCertificate: importCertificateSchema;
   exportCertificate: exportCertificateSchema;
   documentScans: Document[];
+  sentForAdjustment: boolean;
+  company: {
+    name: string;
+  };
 }
 
 export interface importCertificateSchema extends CertificateSchema {
@@ -68,6 +74,7 @@ export interface ImportProduct extends Product {
   weightPerLinearMeter: number;
   incomingQuantity: number;
   mixingRatio: string;
+  productWeight: number;
 }
 
 export interface ExportProduct extends Product {
@@ -77,11 +84,14 @@ export interface ExportProduct extends Product {
 }
 
 export interface Certificate {
+  id: number;
   certificateId: number;
-  certificateNumber: number;
   certificateType: string;
-  date: string;
-  companyName: string;
+  sentForAdjustment: boolean;
+  exportCertificate?: ExportCertificate;
+  importCertificate?: ImportCertificate;
+  company: Company;
+  documentScans: Document[];
 }
 
 export interface Document {

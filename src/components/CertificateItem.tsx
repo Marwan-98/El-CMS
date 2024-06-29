@@ -1,30 +1,63 @@
-import { IMPORT_CERTIFICATE } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
+import { EXPORT_CERTIFICATE } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
 import { Certificate } from "@/lib/types";
 import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
-export default function CertificateItem(props: Certificate) {
+export default function CertificateItem({ certificate }: { certificate: Certificate }) {
   const {
-    certificateId,
-    certificateNumber,
+    id,
     certificateType,
-    date,
-    companyName,
-  } = props;
+    company: { name },
+
+    sentForAdjustment,
+  } = certificate;
+
   const t = useTranslations();
+
+  if (certificateType === EXPORT_CERTIFICATE) {
+    const { exportCertificate: { certificateNumber, date } = {} } = certificate;
+
+    return (
+      <Link
+        href={`certificates/${id}`}
+        className={`rounded-lg w-72 h-fit border-2 p-2 flex flex-col gap-7 ${
+          sentForAdjustment ? "sent-for-adjustment" : "not-sent-for-adjustment"
+        }`}
+      >
+        <div className="flex justify-around text-xl">
+          <span>{`${t("Export Certificate")}`}</span>
+          <span>{name}</span>
+        </div>
+        <div className="text-center text-5xl">
+          <span>{certificateNumber ? `${certificateNumber}` : "XXX"}</span>
+        </div>
+        <div className="text-center text-xl">
+          <span>{`${format(date!, "yyyy-MM-dd")}`}</span>
+        </div>
+      </Link>
+    );
+  }
+
+  const { importCertificate: { certificateNumber, date } = {} } = certificate;
 
   return (
     <Link
-      href={`certificates/${certificateId}`}
-      className="rounded-sm shadow-slate-600 shadow p-1 mt-3 flex gap-20"
+      href={`certificates/${id}`}
+      className={`rounded-lg w-72 h-fit border-2 p-2 flex flex-col gap-7 ${
+        sentForAdjustment ? "sent-for-adjustment" : "not-sent-for-adjustment"
+      }`}
     >
-      <span>{`${t("Certificate No")}: ${certificateNumber}`}</span>
-      <span>{`${t("Certificate Type")}: ${
-        certificateType === IMPORT_CERTIFICATE ? t("import") : t("export")
-      }`}</span>
-      <span>{`${t("Certificate Date")}: ${format(date, "dd/MM/yyyy")}`}</span>
-      <span>{`${t("The Company")}: ${companyName}`}</span>
+      <div className="flex justify-around text-xl">
+        <span>{`${t("Import Certificate")}`}</span>
+        <span>{name}</span>
+      </div>
+      <div className="text-center text-5xl">
+        <span>{`${certificateNumber}`}</span>
+      </div>
+      <div className="text-center text-xl">
+        <span>{`${format(date!, "yyyy-MM-dd")}`}</span>
+      </div>
     </Link>
   );
 }

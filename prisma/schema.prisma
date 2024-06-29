@@ -9,9 +9,6 @@ datasource db {
 
 model Certificate {
   id                Int                @id @default(autoincrement())
-  certificateNumber Int
-  date              DateTime           @db.Date
-  receivedCopy      Boolean            @default(false)
   sentForAdjustment Boolean            @default(false)
   createdAt         DateTime           @default(now())
   modifiedAt        DateTime           @default(now())
@@ -21,26 +18,32 @@ model Certificate {
   documentScans     DocumentScan[]
   importCertificate ImportCertificate?
   exportCertificate ExportCertificate?
+}
+
+model ImportCertificate {
+  id                Int          @id @default(autoincrement())
+  certificateId     Int          @unique
+  certificateNumber Int
+  date              DateTime           @db.Date
+  certificate       Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  importItems       ImportItem[]
+  releaseDate       DateTime     @db.Date
 
   @@unique([certificateNumber, date])
 }
 
-model ImportCertificate {
-  id            Int          @id @default(autoincrement())
-  certificateId Int          @unique
-  certificate   Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
-  importItems   ImportItem[]
-  releaseDate   DateTime     @db.Date
-}
-
 model ExportCertificate {
-  id               Int          @id @default(autoincrement())
-  certificateId    Int          @unique
-  certificate      Certificate  @relation(fields: [certificateId], references: [id], onDelete: Cascade)
-  exportItems      ExportItem[]
-  billNumber       String
-  totalGrossWeight Int
-  totalNetWeight   Int
+  id                Int                 @id @default(autoincrement())
+  certificateId     Int                 @unique
+  certificateNumber Int?
+  date              DateTime            @db.Date
+  certificate       Certificate         @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  exportItems       ExportItem[]
+  billNumber        String
+  totalGrossWeight  Int
+  totalNetWeight    Int
+
+  @@unique([date, billNumber])
 }
 
 model DocumentScan {
@@ -69,6 +72,7 @@ model ImportItem {
   width                String
   weightPerLinearMeter Float
   incomingQuantity     Int
+  productWeight        Int
 }
 
 model ExportItem {

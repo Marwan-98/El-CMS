@@ -19,19 +19,35 @@ export async function POST(req: NextRequest) {
     billNumber,
     totalGrossWeight,
     totalNetWeight,
+    sentForAdjustment,
   } = extractDataFromForm(formData);
 
-  const foundCertificate = await prisma.certificate.findUnique({
-    where: {
-      certificateNumber_date: {
-        certificateNumber,
-        date,
+  if (certificateType === IMPORT_CERTIFICATE) {
+    const foundImportCertificate = await prisma.importCertificate.findUnique({
+      where: {
+        certificateNumber_date: {
+          certificateNumber,
+          date,
+        },
       },
-    },
-  });
+    });
 
-  if (foundCertificate) {
-    return NextResponse.json({ error: "Certificate Already Created" }, { status: 400 });
+    if (foundImportCertificate) {
+      return NextResponse.json({ error: "Certificate Already Created" }, { status: 400 });
+    }
+  } else {
+    const foundExportCertificate = await prisma.exportCertificate.findUnique({
+      where: {
+        date_billNumber: {
+          date,
+          billNumber,
+        },
+      },
+    });
+
+    if (foundExportCertificate) {
+      return NextResponse.json({ error: "Certificate Already Created" }, { status: 400 });
+    }
   }
 
   const { codeName: companyCode, name: companyName } = await prisma.company
@@ -65,10 +81,7 @@ export async function POST(req: NextRequest) {
 
   const certificate = await prisma.certificate.create({
     data: {
-      certificateNumber,
-      date,
-      receivedCopy: false,
-      sentForAdjustment: false,
+      sentForAdjustment: sentForAdjustment === "YES" ? true : false,
       createdAt: new Date(),
       modifiedAt: new Date(),
       certificateType,
@@ -76,16 +89,19 @@ export async function POST(req: NextRequest) {
         certificateType === IMPORT_CERTIFICATE
           ? {
               create: {
+                certificateNumber,
+                date,
                 releaseDate,
                 importItems: {
                   createMany: {
                     data: (products as ImportProduct[]).map(
-                      ({ name, width, weightPerLinearMeter, incomingQuantity, mixingRatio }) => ({
+                      ({ name, width, weightPerLinearMeter, incomingQuantity, mixingRatio, productWeight }) => ({
                         name,
                         mixingRatio,
                         width,
                         weightPerLinearMeter,
                         incomingQuantity,
+                        productWeight,
                       })
                     ),
                   },
@@ -97,6 +113,8 @@ export async function POST(req: NextRequest) {
         certificateType === EXPORT_CERTIFICATE
           ? {
               create: {
+                certificateNumber,
+                date,
                 totalGrossWeight,
                 totalNetWeight,
                 billNumber,
@@ -136,19 +154,73 @@ export async function GET(req: NextRequest) {
   const certificateNumber = searchParams.get("certificateNumber");
   const dateFrom = getCorrectDate(searchParams.get("date[from]"));
   const dateTo = getCorrectDate(searchParams.get("date[to]"));
+  const certificateType = searchParams.get("certificateType");
+
+  if (certificateType === IMPORT_CERTIFICATE) {
+    const certificates = await prisma.certificate.findMany({
+      where: {
+        importCertificate: {
+          certificateNumber: {
+            equals: +certificateNumber! || undefined,
+          },
+          date: {
+            gte: dateFrom ? dateFrom : undefined,
+            lte: dateTo ? dateTo : undefined,
+          },
+        },
+      },
+      select: {
+        id: true,
+        certificateType: true,
+        sentForAdjustment: true,
+        company: {
+          select: {
+            name: true,
+          },
+        },
+        importCertificate: {
+          select: {
+            certificateNumber: true,
+            date: true,
+          },
+        },
+      },
+    });
+
+    if (!certificates.length) {
+      return NextResponse.json({ error: "No certificates found!" }, { status: 404 });
+    }
+
+    return NextResponse.json(certificates, { status: 200 });
+  }
 
   const certificates = await prisma.certificate.findMany({
     where: {
-      certificateNumber: {
-        equals: +certificateNumber! || undefined,
-      },
-      date: {
-        gte: dateFrom ? dateFrom : undefined,
-        lte: dateTo ? dateTo : undefined,
+      exportCertificate: {
+        certificateNumber: {
+          equals: +certificateNumber! || undefined,
+        },
+        date: {
+          gte: dateFrom ? dateFrom : undefined,
+          lte: dateTo ? dateTo : undefined,
+        },
       },
     },
-    include: {
-      company: true,
+    select: {
+      id: true,
+      certificateType: true,
+      sentForAdjustment: true,
+      company: {
+        select: {
+          name: true,
+        },
+      },
+      exportCertificate: {
+        select: {
+          certificateNumber: true,
+          date: true,
+        },
+      },
     },
   });
 

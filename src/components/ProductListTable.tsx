@@ -1,25 +1,24 @@
 import { useTranslations } from "next-intl";
 import ProductListItem from "./ProductListItem";
-import {
-  EXPORT_CERTIFICATE,
-  IMPORT_CERTIFICATE,
-} from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
-import { ExportProduct, ImportProduct } from "@/lib/types";
+import { EXPORT_CERTIFICATE, IMPORT_CERTIFICATE } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
+import { exportCertificateSchema, importCertificateSchema } from "@/lib/types";
 
 export default function ProductListTable({
-  importItems,
-  exportItems,
+  importCertificate,
+  exportCertificate,
 }: {
-  importItems?: ImportProduct[];
-  exportItems?: ExportProduct[];
+  importCertificate?: importCertificateSchema;
+  exportCertificate?: exportCertificateSchema;
 }) {
   const t = useTranslations();
 
-  if (exportItems) {
+  if (exportCertificate) {
+    const { exportItems, totalGrossWeight, totalNetWeight } = exportCertificate || {};
+
     return (
-      <table className="table-fixed m-auto text-center">
+      <table className="table-fixed w-full text-center">
         <thead>
-          <tr>
+          <tr className="bg-[#14213D] text-white">
             <th className="w-80">{t("Product")}</th>
             <th className="w-36">{t("Gross weight")}</th>
             <th className="w-36">{t("Net weight")}</th>
@@ -27,36 +26,35 @@ export default function ProductListTable({
         </thead>
         <tbody>
           {exportItems.map((item) => (
-            <ProductListItem
-              key={item.id}
-              item={item}
-              certificateType={EXPORT_CERTIFICATE}
-            />
+            <ProductListItem key={item.id} item={item} certificateType={EXPORT_CERTIFICATE} />
           ))}
+          <tr className="h-8  bg-[#1a9f58] text-white">
+            <th className="w-80">{t("Total")}</th>
+            <td>{totalGrossWeight}</td>
+            <td>{totalNetWeight}</td>
+          </tr>
         </tbody>
       </table>
     );
   }
 
+  const { importItems } = importCertificate || {};
+
   return (
-    <table className="table-fixed m-auto text-center">
+    <table className="table-fixed w-full text-center">
       <thead>
-        <tr>
-          <th className="w-72">{t("Product")}</th>
-          <th className="w-64 ">{t("Mixing Ratio")}</th>
-          <th className="w-28">{t("Width")}</th>
-          <th className="w-36">{t("Weight Per Linear Meter")}</th>
-          <th className="w-44">{t("Incoming Quantity")}</th>
-          <th className="w-8">{t("Weight")}</th>
+        <tr className="bg-[#14213D] text-white">
+          <th className="w-72 py-1">{t("Product")}</th>
+          <th className="w-32 py-1">{t("Mixing Ratio")}</th>
+          <th className="w-28 py-1">{t("Width")}</th>
+          <th className="w-32 py-1">{t("Weight Per Linear Meter")}</th>
+          <th className="w-40 py-1">{t("Incoming Quantity")}</th>
+          <th className="w-10 py-1">{t("Weight")}</th>
         </tr>
       </thead>
       <tbody>
         {importItems!.map((item) => (
-          <ProductListItem
-            key={item.id}
-            item={item}
-            certificateType={IMPORT_CERTIFICATE}
-          />
+          <ProductListItem key={item.id} item={item} certificateType={IMPORT_CERTIFICATE} />
         ))}
       </tbody>
     </table>

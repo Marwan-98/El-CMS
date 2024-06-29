@@ -1,15 +1,17 @@
 import { DOCUMENT_TYPES } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
 import { Document, DocumentType, FormObject, Products } from "@/lib/types";
-import { getCorrectDate } from "@/lib/utils";
+import { getCorrectDate, setMetaData } from "@/lib/utils";
 import { writeFile } from "fs/promises";
 import { CertificateType } from "@prisma/client";
 import ExcelJS from "exceljs";
 import { format } from "date-fns";
 import { BOOKS_LIST, BookDetails, CERTIFICATE_BOOK_NAMES_MAP, COLUMN_DEFAULT_STYLES } from "@/utils/constants";
+import { execSync } from "child_process";
 
 export function extractDataFromForm(formData: FormData) {
   const certificateNumber: number = +formData.get("certificateNumber")!;
   const date: string = getCorrectDate(formData.get("date")! as string)!;
+  const sentForAdjustment: string = formData.get("sentForAdjustment")! as string;
 
   const products = JSON.parse(formData.get("products") as string) as Products[];
 
@@ -32,6 +34,7 @@ export function extractDataFromForm(formData: FormData) {
     billNumber,
     totalGrossWeight,
     totalNetWeight,
+    sentForAdjustment,
   };
 }
 
@@ -42,7 +45,12 @@ export function saveFilesToServer(formData: FormData, companyCode: string) {
   formData.forEach((value) => {
     (async () => {
       if (DOCUMENT_TYPES.includes(value as string)) {
-        const [type, file] = formData.getAll(value as string) as [DocumentType, File];
+        const type = formData.get(`${value}_TYPE`) as DocumentType;
+        const file = formData.get(`${value}_FILE`) as File | string;
+
+        if (typeof file === "string") {
+          return;
+        }
 
         documents.push({
           type,
@@ -52,8 +60,11 @@ export function saveFilesToServer(formData: FormData, companyCode: string) {
 
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const path = `${PDF_SAVE_PATH}/${companyCode}/${type}/${file.name}`;
+
+        const path = `${PDF_SAVE_PATH}\\${companyCode}\\${type}\\${file.name}`;
+
         await writeFile(path, buffer);
+        setMetaData(path, "added_by", "el-manar", execSync);
       }
     })().catch((e) => console.log(e));
   });
@@ -75,7 +86,7 @@ function writeCertificateDetails(
     const amountOfProducts = products.length - 1;
 
     bookColumns.forEach((key) => {
-      const { columnNumber, relatedToProduct } = book.columns[key];
+      const { columnNumber, relatedToProduct = false } = book.columns[key];
 
       if (relatedToProduct) {
         return;
@@ -95,12 +106,18 @@ function writeCertificateDetails(
         return;
       }
 
+      if (key === "sentForAdjustment") {
+        currentCell.value = formObject[key] === "NO" ? "" : "تم ارسالها للتسوية";
+
+        return;
+      }
+
       if (key === "name") {
         for (const [productIdx, product] of formObject["products"].entries()) {
           for (const prop in product) {
             const {
               columns: {
-                prop: { columnNumber },
+                [prop]: { columnNumber },
               },
             } = book;
 

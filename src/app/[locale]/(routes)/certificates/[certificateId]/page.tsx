@@ -38,47 +38,78 @@ export default function Certificate({
     return null;
   }
 
-  const { certificateNumber, certificateType, date, importCertificate, exportCertificate, documentScans } =
-    certificate || {};
+  const {
+    certificateType,
+    importCertificate,
+    exportCertificate,
+    documentScans,
+    sentForAdjustment,
+    company: { name },
+  } = certificate || {};
 
-  const { releaseDate, importItems } = importCertificate || {};
-  const { exportItems } = exportCertificate || {};
+  const {
+    releaseDate,
+    certificateNumber: importCertificateNumber,
+    date: importCertificateDate,
+  } = importCertificate || {};
+  const {
+    billNumber,
+    certificateNumber: exportCertificateNumber,
+    date: exportCertificateDate,
+  } = exportCertificate || {};
 
   return (
-    <div className="w-full p-5">
-      <div className="flex w-full justify-between items-center">
-        <h6 className="h-fit">
-          {t("Certificate No")}: {certificateNumber}
-        </h6>
-        <div>
-          <h6>
-            {t("Certificate Date")}: {format(date, "dd-MM-yyyy")}
-          </h6>
-          {certificateType === IMPORT_CERTIFICATE && (
-            <h6>
-              {t("Certificate Release Date")}: {format(releaseDate, "dd-MM-yyyy")}
-            </h6>
-          )}
-        </div>
+    <div className="w-[80vw] p-5">
+      <div className="w-full items-center">
+        <h2 className="h-fit text-3xl text-center">
+          {t("Certificate Number")}{" "}
+          {(importCertificateNumber && importCertificateNumber) || exportCertificateNumber || "XXX"}
+        </h2>
       </div>
       <div className="text-center min-h-[300px] mt-10">
-        <h6>{t("Products")}</h6>
         <div className="text-right mt-5">
           {certificateType === IMPORT_CERTIFICATE ? (
-            <ProductListTable importItems={importItems} />
+            <ProductListTable importCertificate={importCertificate} />
           ) : (
-            <ProductListTable exportItems={exportItems} />
+            <ProductListTable exportCertificate={exportCertificate} />
           )}
         </div>
       </div>
-      <div className="flex justify-end gap-5">
-        <div className="flex flex-col items-start gap-10">
-          {documentScans.map(({ type, path }, idx) => (
-            <a href={path} target="_blank" className="flex items-center gap-1" key={idx}>
-              <Link size={20} />
-              {t(type)}
-            </a>
-          ))}
+      <div className="w-full flex justify-between">
+        <div>
+          <h3 className="text-lg font-medium mb-5">{t("Additional Info")}</h3>
+          <div className="flex flex-col items-start gap-2">
+            <span>
+              {t("Company")}: {name}
+            </span>
+            <span>
+              {t("Certificate Date")}:{" "}
+              {format((importCertificateDate && importCertificateDate) || exportCertificateDate, "dd-MM-yyyy")}
+            </span>
+            {releaseDate && (
+              <span>
+                {t("Certificate Release Date")}: {format(releaseDate, "dd-MM-yyyy")}
+              </span>
+            )}
+            {billNumber && (
+              <span>
+                {t("Bill number")}: {billNumber}
+              </span>
+            )}
+
+            <span>{sentForAdjustment ? `${t("Sent For Adjustment")} ✅` : `${t("Not Sent For Adjustment")} ❌`}</span>
+          </div>
+        </div>
+        <div>
+          <h3 className="text-lg font-medium mb-5">{t("PDF Scans")}</h3>
+          <div className="flex flex-col items-start gap-10">
+            {documentScans.map(({ type, path }, idx) => (
+              <a href={path} target="_blank" className="flex items-center gap-1" key={idx}>
+                <Link size={20} />
+                {t(type)}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </div>

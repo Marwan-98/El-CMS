@@ -16,6 +16,11 @@ export async function GET(req: NextRequest) {
       id: +certificateId!,
     },
     include: {
+      company: {
+        select: {
+          name: true,
+        },
+      },
       importCertificate: {
         include: {
           importItems: true,
@@ -60,18 +65,38 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  const foundCertificate = await prisma.certificate.findUnique({
+  const foundCertificate = await prisma.certificate.findFirst({
     where: {
-      certificateNumber_date: {
-        certificateNumber: +id,
-        date: getCorrectDate(date)!,
-      },
+      OR: [
+        {
+          importCertificate: {
+            certificateNumber: {
+              equals: +id,
+            },
+            date: {
+              equals: getCorrectDate(date)!,
+            },
+          },
+        },
+        {
+          exportCertificate: {
+            certificateNumber: {
+              equals: +id,
+            },
+            date: {
+              equals: getCorrectDate(date)!,
+            },
+          },
+        },
+      ],
     },
   });
 
   if (!foundCertificate) {
     return NextResponse.json(
-      { error: "Certificate Not Found, Please make sure that the certificate number and date is correct!" },
+      {
+        error: "Certificate Not Found, Please make sure that the certificate number and date is correct!",
+      },
       {
         status: 404,
       }
@@ -81,8 +106,7 @@ export async function PUT(req: NextRequest) {
   const foundDocument = await prisma.documentScan.findFirst({
     where: {
       Certificate: {
-        certificateNumber: +id,
-        date: getCorrectDate(date)!,
+        id: foundCertificate.id,
       },
       type: documentType,
     },
@@ -94,10 +118,7 @@ export async function PUT(req: NextRequest) {
 
   const updatedCertificate = await prisma.certificate.update({
     where: {
-      certificateNumber_date: {
-        certificateNumber: +id,
-        date: getCorrectDate(date)!,
-      },
+      id: foundCertificate.id,
     },
     data: {
       documentScans: {

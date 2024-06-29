@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { EXPORT_CERTIFICATE, IMPORT_CERTIFICATE } from "../addCertificate/AddCertificate.config";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Certificate } from "@/lib/types";
 
 export default function Search() {
   const t = useTranslations();
@@ -24,6 +28,7 @@ export default function Search() {
           to: z.date(),
         })
         .partial(),
+      certificateType: z.string(),
       form: z.null(),
     })
     .partial()
@@ -41,6 +46,7 @@ export default function Search() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       certificateNumber: 0,
+      certificateType: EXPORT_CERTIFICATE,
     },
   });
 
@@ -58,10 +64,12 @@ export default function Search() {
       .catch((e) => console.log(e));
   }
 
+  console.log(certificates);
+
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-end gap-10">
           <FormField
             control={form.control}
             name="certificateNumber"
@@ -87,21 +95,42 @@ export default function Search() {
               </FormItem>
             )}
           />
-          <Button type="submit">{t("Search")}</Button>
+          <FormField
+            control={form.control}
+            name="certificateType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("Certificate type")}</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    className="justify-end flex"
+                    {...field}
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <div>
+                      <Label>{t("Import Certificate")}</Label>
+                      <RadioGroupItem value={IMPORT_CERTIFICATE} />
+                    </div>
+                    <div>
+                      <Label>{t("Export Certificate")}</Label>
+                      <RadioGroupItem value={EXPORT_CERTIFICATE} />
+                    </div>
+                  </RadioGroup>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <Button type="submit" size={"wide"}>
+            {t("Search")}
+          </Button>
           <FormField name="form" render={() => <FormMessage />} />
         </form>
       </Form>
       <hr className="my-5" />
-      <div className="flex flex-col">
-        {certificates.map(({ id, certificateNumber, certificateType, date, company: { name } }) => (
-          <CertificateItem
-            key={id}
-            certificateNumber={certificateNumber}
-            certificateType={certificateType}
-            date={date}
-            companyName={name}
-            certificateId={id}
-          />
+      <div className="flex gap-5 flex-wrap">
+        {certificates.map((certificate: Certificate) => (
+          <CertificateItem key={certificate.id} certificate={certificate} />
         ))}
       </div>
     </>

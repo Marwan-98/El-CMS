@@ -1,6 +1,7 @@
 {
   "Search for certificates": "ابحث عن شهادات",
   "Certificate No": "رقم الشهادة",
+  "Certificate Number": "شهادة رقم",
   "Certificate Date": "تاريخ الشهادة",
   "Certificate Release Date": "تاريخ صرف الشهادة",
   "Certificate Type": "نوع الشهادة",
@@ -64,5 +65,14 @@
   "Company code": "كود الشركة",
   "Save company": "حفظ الشركة",
   "Company Added!": "تم إضافة الشركة",
-  "Company already created": "الشركة تم إضافتها من قبل"
+  "Company already created": "الشركة تم إضافتها من قبل",
+  "Sent For Adjustment": "تم ارسالها للتسوية",
+  "Not Sent For Adjustment": "لم يتم ارسالها للتسوية",
+  "Company": "شركة",
+  "PDF Scans": "الصور الضوئية",
+  "Additional Info": "معلومات أضافية",
+  "Was the certificate sent for adjustment?": "هل تم إرسال الشهادة للتسوية",
+  "No": "لا",
+  "Yes": "نعم",
+  "Total": "الأجمالي"
 }

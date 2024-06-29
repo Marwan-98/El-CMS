@@ -49,7 +49,7 @@ export const BOOKS_LIST: BookDetails[] = [
       quantityAdjusted: { columnTitle: "الكمية المسواه", columnWidth: 20, columnNumber: 12 },
       quantityLeft: { columnTitle: "الكمية المتبقيه", columnWidth: 20, columnNumber: 13 },
       adjustmentNumber: { columnTitle: "رقم التسويه", columnWidth: 20, columnNumber: 14 },
-      AdjustmentDate: { columnTitle: "تاريخ التسويه", columnWidth: 20, columnNumber: 15 },
+      adjustmentDate: { columnTitle: "تاريخ التسويه", columnWidth: 20, columnNumber: 15 },
     },
     columnsNo: 15,
     mergableCells: 5,

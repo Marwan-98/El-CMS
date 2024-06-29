@@ -11,7 +11,7 @@ export default function ProductListItem({
   if (certificateType === EXPORT_CERTIFICATE) {
     const { name, grossWeight, netWeight } = (item as ExportProduct) || {};
     return (
-      <tr className="h-12">
+      <tr className="h-12  bg-[#FCA311] text-white">
         <td>{name}</td>
         <td>{grossWeight}</td>
         <td>{netWeight}</td>
@@ -19,11 +19,10 @@ export default function ProductListItem({
     );
   }
 
-  const { incomingQuantity, mixingRatio, name, weightPerLinearMeter, width } =
-    (item as ImportProduct) || {};
+  const { incomingQuantity, mixingRatio, name, weightPerLinearMeter, width } = (item as ImportProduct) || {};
 
   return (
-    <tr className="h-12">
+    <tr className="h-12  bg-[#FCA311] text-white">
       <td>{name}</td>
       <td>{mixingRatio}</td>
       <td>{width}</td>

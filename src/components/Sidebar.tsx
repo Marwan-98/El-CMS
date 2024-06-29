@@ -1,8 +1,12 @@
+"use client";
 import { PlusCircle, Search, Building2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   const t = useTranslations();
   const linkMap = [
     {
@@ -23,12 +27,15 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="bg-slate-100 w-52 p-5 text-center">
+    <aside className="bg-[#EFEFEF] min-w-56 p-0 text-center">
       <h1 className="mb-10">El Manar</h1>
       <nav>
-        <ul className="flex flex-col gap-10">
+        <ul className="flex flex-col gap-10 w-[90%] m-auto">
           {linkMap.map((link, idx) => (
-            <li className="flex items-center gap-2" key={idx}>
+            <li
+              className={`flex flex-grow items-center gap-2 p-2 rounded-md ${link.path === pathname ? "active" : ""}`}
+              key={idx}
+            >
               {link.icon}
               <Link href={link.path}>{link.title}</Link>
             </li>

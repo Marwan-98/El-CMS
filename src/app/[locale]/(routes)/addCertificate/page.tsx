@@ -46,8 +46,8 @@ export default function AddCertificate() {
       if (key === "documentScans") {
         for (let i = 0; i < values["documentScans"].length; i++) {
           if (values["documentScans"][i].scan) {
-            data.append(`${values["documentScans"][i].type}`, values["documentScans"][i].type || "");
-            data.append(`${values["documentScans"][i].type}`, values["documentScans"][i].scan[0]);
+            data.append(`${values["documentScans"][i].type}_TYPE`, values["documentScans"][i].type || "");
+            data.append(`${values["documentScans"][i].type}_FILE`, values["documentScans"][i].scan[0]);
           }
         }
         continue;
