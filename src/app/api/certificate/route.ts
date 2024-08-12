@@ -2,6 +2,10 @@ import { getCorrectDate } from "@/lib/utils";
 import prisma from "@/services/prisma/db";
 import { NextRequest, NextResponse } from "next/server";
 import { extractDataFromFileName } from "./route.config";
+import { extractDataFromForm, saveFilesToServer, writeToExcelBook } from "../certificates/route.config";
+import { EXPORT_CERTIFICATE, IMPORT_CERTIFICATE } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
+import { ExportItem, ImportItem } from "@prisma/client";
+import { CERTIFICATE_BOOK_NAMES_MAP, COMPANY } from "@/utils/constants";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -16,11 +20,7 @@ export async function GET(req: NextRequest) {
       id: +certificateId!,
     },
     include: {
-      company: {
-        select: {
-          name: true,
-        },
-      },
+      company: true,
       importCertificate: {
         include: {
           importItems: true,
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(certificate, { status: 200 });
 }
 
-export async function PUT(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   const { documentName, documentType, directory } = await req.json();
 
   const { id, date } = extractDataFromFileName(documentName);
@@ -140,4 +140,161 @@ export async function PUT(req: NextRequest) {
   }
 
   return NextResponse.json(updatedCertificate, { status: 200 });
+}
+
+export async function PUT(req: NextRequest) {
+  const formData = await req.formData();
+
+  const {
+    certificateId,
+    certificateType,
+    certificateNumber,
+    date,
+    releaseDate,
+    products,
+    deletedProducts,
+    companyCode,
+    companyName,
+    sentForAdjustment,
+    billNumber,
+    totalGrossWeight,
+    totalNetWeight,
+  } = extractDataFromForm(formData);
+
+  type Rename<T, K extends keyof T, N extends string> = Pick<T, Exclude<keyof T, K>> & { [P in N]: T[K] };
+
+  type RenamedImportItem = Rename<ImportItem, "id", "productId">;
+  type RenamedExportItem = Rename<ExportItem, "id", "productId">;
+
+  const documents = saveFilesToServer(formData, companyCode);
+
+  const bookName = CERTIFICATE_BOOK_NAMES_MAP[certificateType];
+
+  const { FILE_DIR_ROOT_PATH } = process.env;
+
+  const bookPath = `${FILE_DIR_ROOT_PATH}/${COMPANY} ${companyName}/${bookName} ${companyName}.xlsx`;
+
+  const oldCertificate = await prisma.certificate.findUnique({
+    where: {
+      id: certificateId,
+    },
+    include: {
+      importCertificate: true,
+      exportCertificate: true,
+    },
+  });
+
+  const importCertificateNumber = oldCertificate?.importCertificate?.certificateNumber ?? undefined;
+  const exportCertificateNumber = oldCertificate?.exportCertificate?.certificateNumber ?? undefined;
+
+  await writeToExcelBook(bookPath, formData, importCertificateNumber || exportCertificateNumber);
+
+  const updatedCertificate = await prisma.certificate.update({
+    where: {
+      id: certificateId,
+    },
+    data: {
+      importCertificate:
+        certificateType === IMPORT_CERTIFICATE
+          ? {
+              update: {
+                certificateNumber,
+                date,
+                releaseDate,
+                importItems: {
+                  upsert: (products as unknown as RenamedImportItem[]).map(
+                    ({
+                      productId,
+                      name,
+                      width,
+                      weightPerLinearMeter,
+                      incomingQuantity,
+                      mixingRatio,
+                      productWeight,
+                    }) => ({
+                      where: {
+                        id: productId,
+                      },
+                      update: {
+                        name,
+                        mixingRatio,
+                        width,
+                        weightPerLinearMeter,
+                        incomingQuantity,
+                        productWeight,
+                      },
+                      create: {
+                        name,
+                        mixingRatio,
+                        width,
+                        weightPerLinearMeter,
+                        incomingQuantity,
+                        productWeight,
+                      },
+                    })
+                  ),
+                  deleteMany: (deletedProducts as { productId: number }[]).map((deletedProduct) => ({
+                    id: deletedProduct.productId,
+                  })),
+                },
+              },
+            }
+          : undefined,
+      exportCertificate:
+        certificateType === EXPORT_CERTIFICATE
+          ? {
+              update: {
+                certificateNumber,
+                date,
+                billNumber,
+                totalGrossWeight,
+                totalNetWeight,
+                exportItems: {
+                  upsert: (products as unknown as RenamedExportItem[]).map(
+                    ({ productId, name, netWeight, grossWeight }) => ({
+                      where: {
+                        id: productId,
+                      },
+                      update: {
+                        name,
+                        netWeight,
+                        grossWeight,
+                      },
+                      create: {
+                        name,
+                        netWeight,
+                        grossWeight,
+                      },
+                    })
+                  ),
+                  deleteMany: (deletedProducts as { productId: number }[]).map((deletedProduct) => ({
+                    id: deletedProduct.productId,
+                  })),
+                },
+              },
+            }
+          : undefined,
+      documentScans: {
+        upsert: documents.map((document) => ({
+          where: {
+            certificateId_type: {
+              certificateId,
+              type: document.type,
+            },
+          },
+          update: {
+            type: document.type,
+            path: document.path,
+          },
+          create: {
+            type: document.type,
+            path: document.path,
+          },
+        })),
+      },
+      sentForAdjustment: sentForAdjustment === "YES" ? true : false,
+    },
+  });
+
+  return NextResponse.json(updatedCertificate, { status: 201 });
 }

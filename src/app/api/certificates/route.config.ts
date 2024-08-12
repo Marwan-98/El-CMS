@@ -9,6 +9,7 @@ import { BOOKS_LIST, BookDetails, CERTIFICATE_BOOK_NAMES_MAP, COLUMN_DEFAULT_STY
 import { execSync } from "child_process";
 
 export function extractDataFromForm(formData: FormData) {
+  const certificateId: number = +formData.get("certificateId")!;
   const certificateNumber: number = +formData.get("certificateNumber")!;
   const date: string = getCorrectDate(formData.get("date")! as string)!;
   const sentForAdjustment: string = formData.get("sentForAdjustment")! as string;
@@ -16,7 +17,9 @@ export function extractDataFromForm(formData: FormData) {
   const products = JSON.parse(formData.get("products") as string) as Products[];
 
   const certificateType = formData.get("certificateType") as CertificateType;
-  const companyId: number = +formData.get("companyId")!;
+  const companyId: number = +formData.get("companyId")! as number;
+  const companyCode: string = formData.get("companyCode") as string;
+  const companyName: string = formData.get("companyName") as string;
 
   const releaseDate: string = getCorrectDate(formData.get("releaseDate")! as string)!;
 
@@ -24,7 +27,10 @@ export function extractDataFromForm(formData: FormData) {
   const totalGrossWeight: number = +formData.get("totalGrossWeight")!;
   const totalNetWeight: number = +formData.get("totalNetWeight")!;
 
+  const deletedProducts = JSON.parse((formData.get("deletedProducts") as string) || "[]");
+
   return {
+    certificateId,
     certificateNumber,
     date,
     products,
@@ -35,6 +41,9 @@ export function extractDataFromForm(formData: FormData) {
     totalGrossWeight,
     totalNetWeight,
     sentForAdjustment,
+    deletedProducts,
+    companyCode,
+    companyName,
   };
 }
 
@@ -54,7 +63,6 @@ export function saveFilesToServer(formData: FormData, companyCode: string) {
 
         documents.push({
           type,
-          file,
           path: `${PDF_SCANS_URL}/${companyCode}/${type}/${file.name}`,
         });
 
@@ -75,15 +83,51 @@ export function saveFilesToServer(formData: FormData, companyCode: string) {
 function writeCertificateDetails(
   book: BookDetails,
   worksheet: ExcelJS.Worksheet,
-  currentRow: number,
-  formObject: FormObject
+  formObject: FormObject,
+  oldCertificateNumber?: number
 ) {
   const { products, certificateType } = formObject;
 
   if (book.bookName === CERTIFICATE_BOOK_NAMES_MAP[certificateType]) {
+    const masterCell = getCellByCertificateNumber(worksheet, oldCertificateNumber);
+    const {
+      fullAddress: { row: currentRow },
+    } = masterCell;
+
     const bookColumns = Object.keys(book.columns);
     const { value: lastCellValue } = worksheet.getCell(currentRow - 1, 1);
     const amountOfProducts = products.length - 1;
+
+    // TODO: fix editing issues
+    // if (editing) {
+    // let currentRowIndex = currentRow + 1;
+    // let oldProductsAmount = 0;
+
+    //   let currentCell = worksheet.getCell(currentRowIndex, 2);
+
+    //   while (currentCell.isMergedTo(masterCell)) {
+    //     oldProductsAmount++;
+    //     currentRowIndex++;
+
+    //     currentCell = worksheet.getCell(currentRowIndex, 2);
+    //   }
+
+    //   for (let i = 1; i <= book.columnsNo; i++) {
+    //     if (i <= book.mergableCells) {
+    //       for (let j = 0; j <= oldProductsAmount; j++) {
+    //         worksheet.getCell(currentRow + j, i).unmerge();
+    //       }
+    //     }
+
+    //     worksheet.getCell(currentRow + amountOfProducts, i).style = COLUMN_DEFAULT_STYLES["basicStyle"];
+    //   }
+
+    //   const rowsToAdd = amountOfProducts - oldProductsAmount;
+
+    //   if (rowsToAdd > 0) {
+    //     worksheet.duplicateRow(currentRow, rowsToAdd, true);
+    //   }
+    // }
 
     bookColumns.forEach((key) => {
       const { columnNumber, relatedToProduct = false } = book.columns[key];
@@ -112,18 +156,26 @@ function writeCertificateDetails(
         return;
       }
 
+      if (key === "documentRecieved") {
+        currentCell.value = "";
+
+        return;
+      }
+
       if (key === "name") {
         for (const [productIdx, product] of formObject["products"].entries()) {
           for (const prop in product) {
-            const {
-              columns: {
-                [prop]: { columnNumber },
-              },
-            } = book;
+            if (book.columns[prop]) {
+              const {
+                columns: {
+                  [prop]: { columnNumber },
+                },
+              } = book;
 
-            const currentCell = worksheet.getCell(currentRow + productIdx, columnNumber);
+              const currentCell = worksheet.getCell(currentRow + productIdx, columnNumber);
 
-            currentCell.value = product[prop as keyof typeof product] as unknown as string;
+              currentCell.value = String(product[prop as keyof typeof product]);
+            }
           }
         }
 
@@ -135,7 +187,17 @@ function writeCertificateDetails(
 
     for (let i = 1; i <= book.columnsNo; i++) {
       if (i <= book.mergableCells) {
-        worksheet.mergeCells(currentRow, i, currentRow + amountOfProducts, i);
+        let alreadyMerged = false;
+        for (let r = currentRow; r <= currentRow + amountOfProducts; r++) {
+          if (worksheet.getCell(r, i).isMerged) {
+            alreadyMerged = true;
+            break;
+          }
+        }
+
+        if (!alreadyMerged) {
+          worksheet.mergeCells(currentRow, i, currentRow + amountOfProducts, i);
+        }
       }
 
       worksheet.getCell(currentRow + amountOfProducts, i).style = COLUMN_DEFAULT_STYLES["lastCellStyle"];
@@ -143,7 +205,22 @@ function writeCertificateDetails(
   }
 }
 
-export async function writeToExcelBook(filePath: string, formData: FormData) {
+function getCellByCertificateNumber(worksheet: ExcelJS.Worksheet, oldCertificateNumber?: number): ExcelJS.Cell {
+  let matchedCell = worksheet.getCell(worksheet.actualRowCount + 1, 2);
+
+  for (let i = 0; i < worksheet.actualRowCount; i++) {
+    const currentCell = worksheet.getCell(i, 2);
+
+    if (currentCell.value === oldCertificateNumber) {
+      matchedCell = currentCell;
+      break;
+    }
+  }
+
+  return matchedCell;
+}
+
+export async function writeToExcelBook(filePath: string, formData: FormData, oldCertificateNumber?: number) {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(filePath);
 
@@ -153,10 +230,9 @@ export async function writeToExcelBook(filePath: string, formData: FormData) {
     const lastCell = worksheet.getCell(worksheet.actualRowCount + 1, 2);
 
     if (lastCell && lastCell.value === null) {
-      const { row: currentRow } = lastCell.fullAddress;
       const formObject = extractDataFromForm(formData);
 
-      BOOKS_LIST.map((book) => writeCertificateDetails(book, worksheet, currentRow, formObject));
+      BOOKS_LIST.map((book) => writeCertificateDetails(book, worksheet, formObject, oldCertificateNumber));
 
       await workbook.xlsx.writeFile(filePath);
     }

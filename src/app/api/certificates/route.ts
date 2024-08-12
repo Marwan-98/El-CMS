@@ -1,10 +1,10 @@
 import { EXPORT_CERTIFICATE, IMPORT_CERTIFICATE } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
-import { ExportProduct, ImportProduct } from "@/lib/types";
 import prisma from "@/services/prisma/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getCorrectDate } from "@/lib/utils";
 import { extractDataFromForm, saveFilesToServer, writeToExcelBook } from "./route.config";
 import { CERTIFICATE_BOOK_NAMES_MAP, COMPANY } from "@/utils/constants";
+import { ExportItem, ImportItem } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const { codeName: companyCode, name: companyName } = await prisma.company
     .findUnique({
       where: {
-        id: companyId,
+        id: +companyId,
       },
       select: {
         codeName: true,
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
                 releaseDate,
                 importItems: {
                   createMany: {
-                    data: (products as ImportProduct[]).map(
+                    data: (products as ImportItem[]).map(
                       ({ name, width, weightPerLinearMeter, incomingQuantity, mixingRatio, productWeight }) => ({
                         name,
                         mixingRatio,
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
                 billNumber,
                 exportItems: {
                   createMany: {
-                    data: (products as ExportProduct[]).map(({ name, grossWeight, netWeight }) => ({
+                    data: (products as ExportItem[]).map(({ name, grossWeight, netWeight }) => ({
                       name,
                       grossWeight,
                       netWeight,

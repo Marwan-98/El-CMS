@@ -1,0 +1,19 @@
+.documentList label {
+  margin-block-end: 20px;
+}
+
+.documentList ol {
+  list-style: decimal;
+  list-style-position: inside;
+}
+
+.documentList ol li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-block-end: 20px;
+}
+
+.documentSelected {
+  text-decoration: line-through;
+}

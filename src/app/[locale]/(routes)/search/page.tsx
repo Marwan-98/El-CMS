@@ -13,7 +13,7 @@ import { useTranslations } from "next-intl";
 import { EXPORT_CERTIFICATE, IMPORT_CERTIFICATE } from "../addCertificate/AddCertificate.config";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Certificate } from "@/lib/types";
+import { Certificate } from "@prisma/client";
 
 export default function Search() {
   const t = useTranslations();
@@ -63,8 +63,6 @@ export default function Search() {
       })
       .catch((e) => console.log(e));
   }
-
-  console.log(certificates);
 
   return (
     <>

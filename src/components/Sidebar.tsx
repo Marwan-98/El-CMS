@@ -1,6 +1,7 @@
 "use client";
 import { PlusCircle, Search, Building2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -28,7 +29,7 @@ export default function Sidebar() {
 
   return (
     <aside className="bg-[#EFEFEF] min-w-56 p-0 text-center">
-      <h1 className="mb-10">El Manar</h1>
+      <Image src="/logo.png" alt="logo" width={220} height={220} />
       <nav>
         <ul className="flex flex-col gap-10 w-[90%] m-auto">
           {linkMap.map((link, idx) => (

@@ -1,5 +1,6 @@
 import { EXPORT_CERTIFICATE } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
-import { Certificate } from "@/lib/types";
+import { ExportCertificate, ImportCertificate } from "@/lib/types";
+import { Certificate, Company } from "@prisma/client";
 import { format } from "date-fns";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -11,12 +12,12 @@ export default function CertificateItem({ certificate }: { certificate: Certific
     company: { name },
 
     sentForAdjustment,
-  } = certificate;
+  } = certificate as Certificate & { company: Company };
 
   const t = useTranslations();
 
   if (certificateType === EXPORT_CERTIFICATE) {
-    const { exportCertificate: { certificateNumber, date } = {} } = certificate;
+    const { exportCertificate: { certificateNumber, date } = {} } = certificate as ExportCertificate;
 
     return (
       <Link
@@ -39,7 +40,7 @@ export default function CertificateItem({ certificate }: { certificate: Certific
     );
   }
 
-  const { importCertificate: { certificateNumber, date } = {} } = certificate;
+  const { importCertificate: { certificateNumber, date } = {} } = certificate as ImportCertificate;
 
   return (
     <Link

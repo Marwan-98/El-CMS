@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { UseFormReset, useForm } from "react-hook-form";
+import { UseFormReset, useFieldArray, useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ import {
   certificateFormSchema,
 } from "../AddCertificate.config";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FormValues } from "@/lib/types";
+import { ExportCertificate, FormValues } from "@/lib/types";
+import { TrashIcon } from "lucide-react";
 
 const ExportCertificateForm = (props: {
   onSubmit: (values: FormValues, reset: UseFormReset<z.infer<typeof formSchema>>) => void;
@@ -24,10 +25,11 @@ const ExportCertificateForm = (props: {
   setProductQuantity: Dispatch<SetStateAction<number>>;
   documentQuantity: number;
   setDocumentQuantity: Dispatch<SetStateAction<number>>;
+  certificate?: ExportCertificate;
 }) => {
   const t = useTranslations();
 
-  const { onSubmit, productQuantity, setProductQuantity, documentQuantity, setDocumentQuantity } = props;
+  const { onSubmit, documentQuantity, setDocumentQuantity, certificate } = props;
 
   const formSchema = certificateFormSchema.extend({
     billNumber: z.string().min(1, { message: t("Bill Number is required") }),
@@ -35,9 +37,15 @@ const ExportCertificateForm = (props: {
     totalNetWeight: z.coerce.number().min(1, { message: t("Total Net Weight required") }),
     products: z
       .object({
+        productId: z.coerce.number().optional(),
         name: z.string().min(1, { message: t("Product name is required") }),
         grossWeight: z.coerce.number().min(1, { message: t("Gross Weight required") }),
         netWeight: z.coerce.number().min(1, { message: t("Net Weight required") }),
+      })
+      .array(),
+    deletedProducts: z
+      .object({
+        productId: z.coerce.number(),
       })
       .array(),
   });
@@ -45,11 +53,14 @@ const ExportCertificateForm = (props: {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      billNumber: "",
-      totalGrossWeight: 0,
-      totalNetWeight: 0,
-      products: [
+      certificateNumber: certificate?.exportCertificate?.certificateNumber || 0,
+      date: new Date(certificate?.exportCertificate?.date || new Date()),
+      billNumber: certificate?.exportCertificate?.billNumber || "",
+      totalGrossWeight: certificate?.exportCertificate?.totalGrossWeight || 0,
+      totalNetWeight: certificate?.exportCertificate?.totalNetWeight || 0,
+      products: certificate?.exportCertificate?.exportItems.map((item) => ({ productId: item.id, ...item })) || [
         {
+          productId: -1,
           name: "",
           grossWeight: 0,
           netWeight: 0,
@@ -61,15 +72,33 @@ const ExportCertificateForm = (props: {
           type: "CLEARANCE_DOCUMENT",
         },
       ],
-      sentForAdjustment: "NO",
+      sentForAdjustment: certificate?.sentForAdjustment ? "YES" : "NO",
+      deletedProducts: [],
     },
   });
 
   const {
+    control,
     formState: { isSubmitting },
     reset,
     handleSubmit,
   } = form;
+
+  const {
+    append: appendNewProduct,
+    fields: productFields,
+    remove: removeProductField,
+  } = useFieldArray({ control, name: "products" });
+
+  const { append: appendNewDeletedProduct } = useFieldArray({
+    control,
+    name: "deletedProducts",
+  });
+
+  const deleteProduct = (product: { productId: number; index: number }) => {
+    appendNewDeletedProduct({ productId: product.productId });
+    removeProductField(product.index);
+  };
 
   return (
     <Form {...form}>
@@ -143,9 +172,20 @@ const ExportCertificateForm = (props: {
           />
         </div>
         <div>
-          {Array.from({ length: productQuantity }).map((_, idx: number) => {
+          {productFields.map((productField, idx: number) => {
             return (
-              <div key={idx} className="flex gap-4 items-end mb-5">
+              <div key={productField.id} className="flex gap-4 items-end mb-5">
+                <FormField
+                  control={form.control}
+                  name={`products.${idx}.productId`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input {...field} type="hidden" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   defaultValue=""
@@ -154,7 +194,7 @@ const ExportCertificateForm = (props: {
                     <FormItem>
                       <FormLabel>{t("Product")}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("Product Name")} {...field} />
+                        <Input {...field} placeholder={t("Product Name")} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -188,17 +228,38 @@ const ExportCertificateForm = (props: {
                     </FormItem>
                   )}
                 />
+                {!certificate && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => {
+                      deleteProduct({ productId: productField.productId!, index: idx });
+                    }}
+                  >
+                    <TrashIcon />
+                  </Button>
+                )}
               </div>
             );
           })}
-          <Button
-            variant="outline"
-            className="block"
-            onClick={() => setProductQuantity((productQuantity) => productQuantity + 1)}
-            type="button"
-          >
-            {t("Add product")}
-          </Button>
+          {!certificate && (
+            <Button
+              variant="outline"
+              className="block"
+              onClick={() =>
+                appendNewProduct({
+                  productId: -1,
+                  name: "",
+                  grossWeight: 0,
+                  netWeight: 0,
+                })
+              }
+              type="button"
+            >
+              {t("Add product")}
+            </Button>
+          )}
         </div>
         <div>
           {Array.from({ length: documentQuantity }).map((_, idx: number) => {

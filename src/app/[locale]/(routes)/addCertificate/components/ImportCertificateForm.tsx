@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { UseFormReset, useForm } from "react-hook-form";
+import { UseFormReset, useFieldArray, useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ import {
   TEMPORARY_PERMIT_DOCUMENT,
   certificateFormSchema,
 } from "../AddCertificate.config";
-import { FormValues } from "@/lib/types";
+import { FormValues, ImportCertificate } from "@/lib/types";
+import { TrashIcon } from "lucide-react";
 
 const ImportCertificateForm = (props: {
   onSubmit: (values: FormValues, reset: UseFormReset<z.infer<typeof formSchema>>) => void;
@@ -24,10 +25,11 @@ const ImportCertificateForm = (props: {
   setProductQuantity: Dispatch<SetStateAction<number>>;
   documentQuantity: number;
   setDocumentQuantity: Dispatch<SetStateAction<number>>;
+  certificate?: ImportCertificate;
 }) => {
   const t = useTranslations();
 
-  const { onSubmit, productQuantity, setProductQuantity, documentQuantity, setDocumentQuantity } = props;
+  const { onSubmit, documentQuantity, setDocumentQuantity, certificate = {} as ImportCertificate } = props;
 
   const formSchema = certificateFormSchema.extend({
     releaseDate: z.date({
@@ -35,6 +37,7 @@ const ImportCertificateForm = (props: {
     }),
     products: z
       .object({
+        productId: z.coerce.number().optional(),
         name: z.string().min(1, {
           message: t("Product name is required"),
         }),
@@ -53,13 +56,22 @@ const ImportCertificateForm = (props: {
         productWeight: z.coerce.number(),
       })
       .array(),
+    deletedProducts: z
+      .object({
+        productId: z.coerce.number(),
+      })
+      .array(),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      products: [
+      certificateNumber: certificate?.importCertificate?.certificateNumber || undefined,
+      date: new Date(certificate?.importCertificate?.date || new Date()),
+      releaseDate: new Date(certificate?.importCertificate?.releaseDate || new Date()),
+      products: certificate?.importCertificate?.importItems.map((item) => ({ productId: item.id, ...item })) || [
         {
+          productId: -1,
           name: "",
           width: "",
           mixingRatio: "",
@@ -74,17 +86,35 @@ const ImportCertificateForm = (props: {
           type: "CLEARANCE_DOCUMENT",
         },
       ],
-      sentForAdjustment: "YES",
+      sentForAdjustment: certificate?.sentForAdjustment ? "YES" : "NO",
+      deletedProducts: [],
     },
   });
 
   const {
     formState: { isSubmitting },
+    control,
     reset,
     handleSubmit,
     watch,
     setValue,
   } = form;
+
+  const {
+    append: appendNewProduct,
+    fields: productFields,
+    remove: removeProductField,
+  } = useFieldArray({ control, name: "products" });
+
+  const { append: appendNewDeletedProduct } = useFieldArray({
+    control,
+    name: "deletedProducts",
+  });
+
+  const deleteProduct = (product: { productId: number; index: number }) => {
+    appendNewDeletedProduct({ productId: product.productId });
+    removeProductField(product.index);
+  };
 
   useEffect(() => {
     const subscription = watch((value, { name }) => {
@@ -151,9 +181,20 @@ const ImportCertificateForm = (props: {
           />
         </div>
         <div>
-          {Array.from({ length: productQuantity }).map((_, idx: number) => {
+          {productFields.map((productField, idx) => {
             return (
-              <div key={idx} className="flex gap-4 items-end mb-5">
+              <div key={productField.id} className="flex gap-4 items-end mb-5">
+                <FormField
+                  control={form.control}
+                  name={`products.${idx}.productId`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input {...field} type="hidden" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name={`products.${idx}.name`}
@@ -232,13 +273,33 @@ const ImportCertificateForm = (props: {
                     </FormItem>
                   )}
                 />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => {
+                    deleteProduct({ productId: productField.productId!, index: idx });
+                  }}
+                >
+                  <TrashIcon />
+                </Button>
               </div>
             );
           })}
           <Button
             variant="outline"
             className="block"
-            onClick={() => setProductQuantity((productQuantity) => productQuantity + 1)}
+            onClick={() => {
+              appendNewProduct({
+                productId: -1,
+                name: "",
+                width: "",
+                mixingRatio: "",
+                weightPerLinearMeter: 0,
+                incomingQuantity: 0,
+                productWeight: 0,
+              });
+            }}
             type="button"
           >
             {t("Add product")}

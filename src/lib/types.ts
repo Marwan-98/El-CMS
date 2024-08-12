@@ -1,4 +1,11 @@
-import { Company, ExportCertificate, ImportCertificate } from "@prisma/client";
+import {
+  Certificate,
+  DocumentScan,
+  ExportItem,
+  ImportItem,
+  ImportCertificate as PrismaImportCertificate,
+  ExportCertificate as PrismaExportCertificate,
+} from "@prisma/client";
 
 export interface FormValues {
   certificateNumber?: number;
@@ -8,6 +15,9 @@ export interface FormValues {
     type?: DocumentType;
     //eslint-disable-next-line
     scan?: any;
+  }[];
+  deletedProducts: {
+    productId: number;
   }[];
 }
 
@@ -52,58 +62,37 @@ export interface CertificateSchema {
   };
 }
 
+export type ImportCertificate = Certificate & {
+  importCertificate: PrismaImportCertificate & { importItems: ImportItem[] };
+  documentScans: DocumentScan[];
+};
+
+export type ExportCertificate = Certificate & {
+  exportCertificate: PrismaExportCertificate & { exportItems: ExportItem[] };
+  documentScans: DocumentScan[];
+};
+
 export interface importCertificateSchema extends CertificateSchema {
   releaseDate: Date;
-  importItems: ImportProduct[];
+  importItems: ImportItem[];
 }
 
 export interface exportCertificateSchema extends CertificateSchema {
   billNumber: string;
   totalGrossWeight: number;
   totalNetWeight: number;
-  exportItems: ExportProduct[];
-}
-
-interface Product {
-  name: string;
-}
-
-export interface ImportProduct extends Product {
-  id: number | null | undefined;
-  width: string;
-  weightPerLinearMeter: number;
-  incomingQuantity: number;
-  mixingRatio: string;
-  productWeight: number;
-}
-
-export interface ExportProduct extends Product {
-  id: number | null | undefined;
-  grossWeight: number;
-  netWeight: number;
-}
-
-export interface Certificate {
-  id: number;
-  certificateId: number;
-  certificateType: string;
-  sentForAdjustment: boolean;
-  exportCertificate?: ExportCertificate;
-  importCertificate?: ImportCertificate;
-  company: Company;
-  documentScans: Document[];
+  exportItems: ExportItem[];
 }
 
 export interface Document {
   type: DocumentType;
   path: string;
-  file: File;
 }
 
 export type DocumentType = "CLEARANCE_DOCUMENT" | "SALES_DOCUMENT" | "TEMPORARY_PERMIT_DOCUMENT";
 
 export type CertificateType = "IMPORT_CERTIFICATE" | "EXPORT_CERTIFICATE";
 
-export type Products = ExportProduct | ImportProduct;
+export type Products = ExportItem | ImportItem;
 
 export type TranslationFunction = (key: string, options?: { ns?: string }) => string;

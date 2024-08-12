@@ -49,6 +49,7 @@
   "import": "وارد",
   "export": "صادر",
   "Please select a company": "من فضلك أختر الشركة",
+  "Select a company": "أختر شركة",
   "Select Scan Type": "أختر نوع الصورة الضوئية",
   "PDF Scan Type": "نوع الصورة الضوئية",
   "Add document": "إضافة صورة",
@@ -74,5 +75,11 @@
   "Was the certificate sent for adjustment?": "هل تم إرسال الشهادة للتسوية",
   "No": "لا",
   "Yes": "نعم",
-  "Total": "الأجمالي"
+  "Total": "الأجمالي",
+  "Saved Certificates": "الصور المسجلة",
+  "Export Ceritificate Number": "رقم شهادة الصادر",
+  "Customs Center": "جمرك",
+  "Add Number": "إضافة رقم",
+  "Items Count": "عدد القطع",
+  "torood numbers": "عدد الطرود"
 }
