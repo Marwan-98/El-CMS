@@ -2,10 +2,10 @@ import { getCorrectDate } from "@/lib/utils";
 import prisma from "@/services/prisma/db";
 import { NextRequest, NextResponse } from "next/server";
 import { extractDataFromFileName } from "./route.config";
-import { extractDataFromForm, saveFilesToServer, writeToExcelBook } from "../certificates/route.config";
+import { extractDataFromForm, saveFilesToServer } from "../certificates/route.config";
 import { EXPORT_CERTIFICATE, IMPORT_CERTIFICATE } from "@/app/[locale]/(routes)/addCertificate/AddCertificate.config";
 import { ExportItem, ImportItem } from "@prisma/client";
-import { CERTIFICATE_BOOK_NAMES_MAP, COMPANY } from "@/utils/constants";
+import axios from "axios";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -168,12 +168,6 @@ export async function PUT(req: NextRequest) {
 
   const documents = saveFilesToServer(formData, companyCode);
 
-  const bookName = CERTIFICATE_BOOK_NAMES_MAP[certificateType];
-
-  const { FILE_DIR_ROOT_PATH } = process.env;
-
-  const bookPath = `${FILE_DIR_ROOT_PATH}/${COMPANY} ${companyName}/${bookName} ${companyName}.xlsx`;
-
   const oldCertificate = await prisma.certificate.findUnique({
     where: {
       id: certificateId,
@@ -187,7 +181,18 @@ export async function PUT(req: NextRequest) {
   const importCertificateNumber = oldCertificate?.importCertificate?.certificateNumber ?? undefined;
   const exportCertificateNumber = oldCertificate?.exportCertificate?.certificateNumber ?? undefined;
 
-  await writeToExcelBook(bookPath, formData, importCertificateNumber || exportCertificateNumber);
+  const { FILE_SYSTEM_SERVER_URL } = process.env;
+
+  try {
+    await axios.post(`${FILE_SYSTEM_SERVER_URL}/files/edit`!, {
+      certificateType,
+      formObject: extractDataFromForm(formData),
+      companyName,
+      oldCertificateNumber: importCertificateNumber || exportCertificateNumber,
+    });
+  } catch (error) {
+    return NextResponse.json({ message: "Server Error" }, { status: 500 });
+  }
 
   const updatedCertificate = await prisma.certificate.update({
     where: {
