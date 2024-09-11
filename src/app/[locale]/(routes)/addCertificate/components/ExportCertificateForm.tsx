@@ -53,7 +53,7 @@ const ExportCertificateForm = (props: {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      certificateNumber: certificate?.exportCertificate?.certificateNumber || 0,
+      certificateNumber: certificate?.exportCertificate?.certificateNumber || undefined,
       date: new Date(certificate?.exportCertificate?.date || new Date()),
       billNumber: certificate?.exportCertificate?.billNumber || "",
       totalGrossWeight: certificate?.exportCertificate?.totalGrossWeight || 0,

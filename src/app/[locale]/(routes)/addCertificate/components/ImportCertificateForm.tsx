@@ -365,7 +365,7 @@ const ImportCertificateForm = (props: {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("Was the certificate sent for adjustment?")}</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} {...field}>
                   <FormControl>
                     <SelectTrigger className="w-[250px]" dir="rtl">
                       <SelectValue placeholder={t("Was the certificate sent for adjustment?")} />

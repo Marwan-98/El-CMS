@@ -11,9 +11,11 @@ import { FormControl } from "./ui/form";
 import { FieldValues } from "react-hook-form";
 import { format } from "date-fns";
 import { arEG } from "date-fns/locale";
+import { useTranslations } from "next-intl";
 
 export function DatePicker(props: { field: FieldValues["date"] }) {
   const { field } = props;
+  const t = useTranslations();
 
   return (
     <Popover>
@@ -23,7 +25,7 @@ export function DatePicker(props: { field: FieldValues["date"] }) {
             variant={"outline"}
             className={cn("w-[240px] pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
           >
-            {field.value ? format(field.value, "PPP", { locale: arEG }) : <span>Pick a date</span>}
+            {field.value ? format(field.value, "PPP", { locale: arEG }) : <span>{t("Pick a date")}</span>}
             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
           </Button>
         </FormControl>

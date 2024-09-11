@@ -178,8 +178,8 @@ export async function PUT(req: NextRequest) {
     },
   });
 
-  const importCertificateNumber = oldCertificate?.importCertificate?.certificateNumber ?? undefined;
-  const exportCertificateNumber = oldCertificate?.exportCertificate?.certificateNumber ?? undefined;
+  const importCertificate = oldCertificate?.importCertificate ?? undefined;
+  const exportCertificate = oldCertificate?.exportCertificate ?? undefined;
 
   const { FILE_SYSTEM_SERVER_URL } = process.env;
 
@@ -188,9 +188,10 @@ export async function PUT(req: NextRequest) {
       certificateType,
       formObject: extractDataFromForm(formData),
       companyName,
-      oldCertificateNumber: importCertificateNumber || exportCertificateNumber,
+      oldCertificate: importCertificate || exportCertificate,
     });
   } catch (error) {
+    console.log(error);
     return NextResponse.json({ message: "Server Error" }, { status: 500 });
   }
 

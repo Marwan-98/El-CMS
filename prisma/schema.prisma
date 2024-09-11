@@ -57,9 +57,10 @@ model DocumentScan {
 }
 
 model Company {
-  id           Int           @id @default(autoincrement())
+  id           Int            @id @default(autoincrement())
   name         String
-  codeName      String       @unique
+  fullName     String         @default("")
+  codeName     String         @unique
   Certificates Certificate[]
 }
 

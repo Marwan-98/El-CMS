@@ -67,7 +67,7 @@ export default function AddCertificate() {
       })
       .then((res) => {
         if (res.status === 200) {
-          // reset();
+          reset();
           setProductQuantity(1);
           setDocumentQuantity(1);
           toast.success(t("Certificate Created!"), {

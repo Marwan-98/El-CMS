@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { AlignmentType, Document, Packer, Paragraph } from "docx";
-import { saveAs } from "file-saver";
 import axios from "axios";
 import { Company } from "@prisma/client";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -15,86 +13,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/Datepicker";
 import { CUSTOMS_CENTERS } from "./factoring.config";
-import { format } from "date-fns";
-
-function generateDocument(
-  company: string,
-  customsCenter: string,
-  exportCertificate: { date: Date; certificateNumber: number },
-  importCertificates: number[],
-  torood: number,
-  netWeight: number,
-  itemsCount: number
-) {
-  const { certificateNumber, date } = exportCertificate;
-
-  const formattedDate = format(date, "dd/MM/yyyy");
-
-  importCertificates.forEach((certificate: number) => {
-    const document = new Document({
-      sections: [
-        {
-          children: [
-            new Paragraph({ text: "وزاره المالية" }),
-            new Paragraph({ text: "مصلحة الجمارك" }),
-            new Paragraph({ text: "ملحق إذن إفراج وارد البضائع السماح المؤقت والدروباك", alignment: "center" }),
-            new Paragraph({ text: `رقم ${certificate} بتاريخ 23/5/2024 سماح مؤقت`, alignment: "center" }),
-            new Paragraph({ text: `جمرك / ${customsCenter}` }),
-            new Paragraph({ text: `اسم المستورد / ${company} ` }),
-            new Paragraph({ text: "الصنف /                            اقمشه" }),
-            new Paragraph({ text: "خصم الكميات المصدره", alignment: "center" }),
-            new Paragraph({ text: "" }),
-            new Paragraph({
-              text: `تم تصدير عدد (${torood}) طرد  بكميه (${itemsCount}) قطعه ملابس جاهزه بوزن صافي (${netWeight}) كجم بالشهاده رقم (${certificateNumber}) بتاريخ ${formattedDate}`,
-            }),
-          ],
-          properties: {
-            page: {
-              size: {
-                orientation: "landscape",
-              },
-            },
-          },
-        },
-      ],
-      styles: {
-        default: {
-          document: {
-            run: {
-              size: "14pt",
-              font: "Arial (Body CS)",
-              rightToLeft: true,
-            },
-            paragraph: {
-              alignment: AlignmentType.RIGHT,
-              spacing: {
-                after: 1.5,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    Packer.toBlob(document).then((blob) => {
-      saveAs(blob, `تخصيم بادي شو رقم الاذن ${certificate} شهادة ${certificateNumber}.docx`);
-    });
-  });
-}
 
 function CertificateFactoring() {
   const [companies, useCompanies] = useState<Company[]>([]);
-  const [importCertificatesNumber, setImportCertificatesNumber] = useState(1);
   const t = useTranslations();
 
   const formSchema = z.object({
-    company: z.string(),
+    company: z.object({
+      id: z.coerce.number(),
+      name: z.string(),
+      fullName: z.string(),
+      codeName: z.string(),
+    }),
     exportCertificate: z.object({
       certificateNumber: z.coerce.number(),
+      billNumber: z.string(),
       date: z.date(),
     }),
     customsCenter: z.string(),
-    importCertificates: z.coerce.number().array(),
+    importCertificates: z
+      .object({
+        certificateNumber: z.coerce.number(),
+        date: z.date(),
+      })
+      .array(),
     torood: z.coerce.number(),
     netWeight: z.coerce.number(),
     itemsCount: z.coerce.number(),
@@ -103,11 +45,21 @@ function CertificateFactoring() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      company: "",
+      company: {
+        id: 0,
+        name: "",
+        fullName: "",
+        codeName: "",
+      },
       exportCertificate: {
         certificateNumber: 0,
+        billNumber: "",
       },
-      importCertificates: [],
+      importCertificates: [
+        {
+          certificateNumber: 0,
+        },
+      ],
       torood: 0,
       netWeight: 0,
       itemsCount: 0,
@@ -122,21 +74,34 @@ function CertificateFactoring() {
       .catch((e) => console.log(e));
   }, []);
 
-  const onSubmit = (data: {
-    company: string;
+  const onSubmit = async (data: {
+    company: Company;
     exportCertificate: { date: Date; certificateNumber: number };
     customsCenter: string;
-    importCertificates: number[];
+    importCertificates: { date: Date; certificateNumber: number }[];
     torood: number;
     netWeight: number;
     itemsCount: number;
   }) => {
     const { company, customsCenter, exportCertificate, importCertificates, torood, itemsCount, netWeight } = data;
 
-    generateDocument(company, customsCenter, exportCertificate, importCertificates, torood, netWeight, itemsCount);
+    await axios.post(`/api/factoring`, {
+      company,
+      customsCenter,
+      exportCertificate,
+      importCertificates,
+      torood,
+      itemsCount,
+      netWeight,
+    });
   };
 
-  const { handleSubmit } = form;
+  const { handleSubmit, control, setValue } = form;
+
+  const { append: appendNewImportCertificate, fields: importCertificateFields } = useFieldArray({
+    control,
+    name: "importCertificates",
+  });
 
   return (
     <Form {...form}>
@@ -144,10 +109,16 @@ function CertificateFactoring() {
         <FormField
           control={form.control}
           name="company"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormLabel>{t("The Company")}</FormLabel>
-              <Select onValueChange={field.onChange}>
+              <Select
+                onValueChange={(e) => {
+                  const company = companies.find(({ id }) => id === +e);
+
+                  setValue("company", company!);
+                }}
+              >
                 <FormControl>
                   <SelectTrigger className="w-[200px]" dir="rtl">
                     <SelectValue placeholder={t("Select a company")} />
@@ -155,8 +126,8 @@ function CertificateFactoring() {
                 </FormControl>
                 <SelectContent dir="rtl">
                   {companies.map((company) => (
-                    <SelectItem value={company.name} key={company.id}>
-                      {company.name}
+                    <SelectItem value={String(company.id)} key={company.id}>
+                      {company.fullName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -214,16 +185,30 @@ function CertificateFactoring() {
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="exportCertificate.billNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("Bill number")}</FormLabel>
+                <FormControl>
+                  <Input type="text" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div>
-          <FormLabel className="mb-3">{t("Export Ceritificate Number")}</FormLabel>
-          {Array.from({ length: importCertificatesNumber }).map((_, idx: number) => (
-            <div key={idx} className="mb-3">
+          <FormLabel className="mb-5">{t("Ceritificates")}</FormLabel>
+          {importCertificateFields.map((_, idx: number) => (
+            <div key={idx} className="mb-3 flex gap-5 align-middle items-end">
               <FormField
                 control={form.control}
-                name={`importCertificates.${idx}`}
+                name={`importCertificates.${idx}.certificateNumber`}
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>{t("Import Ceritificate Number")}</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -231,56 +216,74 @@ function CertificateFactoring() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name={`importCertificates.${idx}.date`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("Import Ceritificate Date")}</FormLabel>
+                    <FormControl>
+                      <DatePicker field={field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
           ))}
-          <FormField
-            control={form.control}
-            name="torood"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("torood numbers")}</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="netWeight"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("Net Weight")}</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="itemsCount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("Items Count")}</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <Button
             variant="outline"
             className="block"
-            onClick={() => setImportCertificatesNumber((importCertificatesNumber) => importCertificatesNumber + 1)}
+            onClick={() =>
+              appendNewImportCertificate({
+                certificateNumber: 0,
+                date: new Date(),
+              })
+            }
             type="button"
           >
             {t("Add Number")}
           </Button>
         </div>
+
+        <FormField
+          control={form.control}
+          name="torood"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("torood numbers")}</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="itemsCount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("Items Count")}</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="netWeight"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("Net weight")}</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button type="submit">{t("Save Certificate")}</Button>
       </form>
     </Form>

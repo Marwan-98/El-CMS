@@ -78,8 +78,11 @@
   "Total": "الأجمالي",
   "Saved Certificates": "الصور المسجلة",
   "Export Ceritificate Number": "رقم شهادة الصادر",
+  "Import Ceritificate Number": "رقم إذن الوارد",
+  "Import Ceritificate Date": "تاريخ الإذن",
   "Customs Center": "جمرك",
   "Add Number": "إضافة رقم",
   "Items Count": "عدد القطع",
-  "torood numbers": "عدد الطرود"
+  "torood numbers": "عدد الطرود",
+  "Ceritificates": "الأذون"
 }
