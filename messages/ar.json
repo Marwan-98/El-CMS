@@ -85,5 +85,10 @@
   "Items Count": "عدد القطع",
   "torood numbers": "عدد الطرود",
   "Ceritificates": "الأذون",
-  "Sent to settle": "إرسال للتسوية"
+  "Settlement No": "رقم التسوية",
+  "Sent to settle": "إرسال للتسوية",
+  "The following certificates were not found": "لم يتم العثور علي الشهادات الأتية",
+  "The following certificates' documents were not found": "لم يتم العثور علي الصور الضوئية لتلك الشهادات",
+  "Please make sure that the certificate number and date are correct": "من فضلك تأكد من رقم الشهادة و تاريخها",
+  "The operation has been performed successfully": "تمت العملية بنجاح"
 }

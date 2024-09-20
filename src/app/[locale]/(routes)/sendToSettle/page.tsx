@@ -2,14 +2,15 @@
 
 import { DatePicker } from "@/components/Datepicker";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { showNotification } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Company } from "@prisma/client";
-import { Select } from "@radix-ui/react-select";
-import axios from "axios";
+import { Company, ExportCertificate, ImportCertificate } from "@prisma/client";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { formatISO } from "date-fns";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
@@ -19,6 +20,9 @@ import { z } from "zod";
 function SendToSettle() {
   const t = useTranslations();
   const [companies, useCompanies] = useState<Company[]>([]);
+  const [errDialogTitle, setErrDialogTitle] = useState("");
+  const [notFoundCertificates, setNotFoundCertificates] = useState<ImportCertificate[] | ExportCertificate[]>([]);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     axios
@@ -29,17 +33,31 @@ function SendToSettle() {
   }, []);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const { certificates, companyName, certificateType } = values;
+    const { certificates, company, certificateType, settlementNumber } = values;
 
     try {
-      await axios.put("/api/settle", {
-        certificates,
-        companyName,
-        certificateType,
-      });
+      await axios
+        .put("/api/settle", {
+          certificates,
+          company,
+          certificateType,
+          settlementNumber,
+        })
+        .then((res) => {
+          if (res.status === 200) {
+            showNotification(t(res.data.message), "success");
+            setValue("certificates", []);
+          }
+        });
     } catch (error) {
-      // const { response } = error as AxiosError;
-      // const { data: errorData, status } = response as AxiosResponse;
+      const { response } = error as AxiosError;
+      const { data: errorData, status } = response as AxiosResponse;
+
+      if (status === 422) {
+        setErrDialogTitle(errorData.message);
+        setNotFoundCertificates(errorData.notFoundElements);
+        setOpen(true);
+      }
     }
   };
 
@@ -51,16 +69,18 @@ function SendToSettle() {
         certificateBillNumber: z.string().optional(),
       })
       .array(),
-    companyName: z.string(),
+    company: z.string(),
     certificateType: z.string(),
+    settlementNumber: z.coerce.number(),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       certificates: [],
-      companyName: "",
+      company: "",
       certificateType: "",
+      settlementNumber: 0,
     },
   });
 
@@ -156,20 +176,33 @@ function SendToSettle() {
           />
           <FormField
             control={form.control}
-            name={"companyName"}
+            name={"company"}
             render={({ field }) => (
               <Select onValueChange={field.onChange} {...field}>
                 <SelectTrigger className="w-[180px] my-4" dir="rtl">
                   <SelectValue placeholder={t("Company name")} />
                 </SelectTrigger>
                 <SelectContent dir="rtl">
-                  {companies.map(({ id, name }) => (
-                    <SelectItem key={id} value={name}>
+                  {companies.map(({ id, name, codeName }) => (
+                    <SelectItem key={id} value={JSON.stringify({ name, codeName })}>
                       {name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="settlementNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("Settlement No")}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t("Settlement No")} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
           />
           {fields.map((field, idx) => (
@@ -227,6 +260,16 @@ function SendToSettle() {
           style={{ display: fields.length > 0 ? "none" : "block" }}
         />
       )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogTitle>{t(errDialogTitle)}</DialogTitle>
+          <ul>
+            {notFoundCertificates.map((certificate, idx) => (
+              <li key={idx}>{`${certificate.certificateNumber}`}</li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
